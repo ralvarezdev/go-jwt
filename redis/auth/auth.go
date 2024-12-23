@@ -2,8 +2,8 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-redis/redis/v8"
-	godatabases "github.com/ralvarezdev/go-databases"
 	godatabasesredis "github.com/ralvarezdev/go-databases/redis"
 	"strconv"
 	"time"
@@ -69,7 +69,7 @@ func (d *DefaultTokenValidator) IsTokenValid(jwtId string) (bool, error) {
 	// Parse value
 	isValid, err := strconv.ParseBool(value)
 	if err != nil {
-		return false, godatabases.InternalServerError
+		return false, fmt.Errorf(FailedToParseBoolValueError, err)
 	}
 
 	return isValid, nil
