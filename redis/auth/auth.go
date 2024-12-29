@@ -24,7 +24,10 @@ type (
 )
 
 // NewDefaultTokenValidator creates a new token validator
-func NewDefaultTokenValidator(redisClient *redis.Client) (*DefaultTokenValidator, error) {
+func NewDefaultTokenValidator(redisClient *redis.Client) (
+	*DefaultTokenValidator,
+	error,
+) {
 	// Check if the Redis client is nil
 	if redisClient == nil {
 		return nil, godatabasesredis.NilClientError
@@ -39,11 +42,19 @@ func (d *DefaultTokenValidator) GetKey(jwtId string) string {
 }
 
 // AddToken adds the JWT Identifier with the given expiration period
-func (d *DefaultTokenValidator) AddToken(jwtId string, period time.Duration) error {
+func (d *DefaultTokenValidator) AddToken(
+	jwtId string,
+	period time.Duration,
+) error {
 	key := d.GetKey(jwtId)
 
 	// Set the initial value
-	_, err := d.redisClient.Set(context.Background(), key, true, period).Result()
+	_, err := d.redisClient.Set(
+		context.Background(),
+		key,
+		true,
+		period,
+	).Result()
 	return err
 }
 
@@ -52,7 +63,12 @@ func (d *DefaultTokenValidator) RevokeToken(jwtId string) error {
 	key := d.GetKey(jwtId)
 
 	// Set the token as invalid by setting the value to false
-	_, err := d.redisClient.Set(context.Background(), key, false, redis.KeepTTL).Result()
+	_, err := d.redisClient.Set(
+		context.Background(),
+		key,
+		false,
+		redis.KeepTTL,
+	).Result()
 	return err
 }
 
@@ -69,7 +85,7 @@ func (d *DefaultTokenValidator) IsTokenValid(jwtId string) (bool, error) {
 	// Parse value
 	isValid, err := strconv.ParseBool(value)
 	if err != nil {
-		return false, fmt.Errorf(FailedToParseBoolValueError, err)
+		return false, fmt.Errorf(ErrFailedToParseBoolValue, err)
 	}
 
 	return isValid, nil

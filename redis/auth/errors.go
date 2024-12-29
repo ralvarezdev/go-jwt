@@ -1,5 +1,5 @@
 package auth
 
 var (
-	FailedToParseBoolValueError = "failed to parse bool value: %v"
+	ErrFailedToParseBoolValue = "failed to parse bool value: %v"
 )

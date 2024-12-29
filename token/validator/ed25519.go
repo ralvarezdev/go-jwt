@@ -22,7 +22,7 @@ func NewEd25519Validator(
 ) (*Ed25519Validator, error) {
 	// Check if either the token validator or the mode flag is nil
 	if claimsValidator == nil {
-		return nil, NilClaimsValidatorError
+		return nil, ErrNilClaimsValidator
 	}
 	if mode == nil {
 		return nil, goflagmode.NilModeFlagError
@@ -31,13 +31,13 @@ func NewEd25519Validator(
 	// Parse the public key
 	key, err := jwt.ParseEdPublicKeyFromPEM(publicKey)
 	if err != nil {
-		return nil, gojwt.UnableToParsePublicKeyError
+		return nil, gojwt.ErrUnableToParsePublicKey
 	}
 
 	// Ensure the key is of type ED25519 public key
 	ed25519Key, ok := key.(ed25519.PublicKey)
 	if !ok {
-		return nil, gojwt.InvalidKeyTypeError
+		return nil, gojwt.ErrInvalidKeyType
 	}
 
 	return &Ed25519Validator{
@@ -55,7 +55,7 @@ func (d *Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 		func(rawToken *jwt.Token) (interface{}, error) {
 			// Check to see if the token uses the expected signing method
 			if _, ok := rawToken.Method.(*jwt.SigningMethodEd25519); !ok {
-				return nil, UnexpectedSigningMethodError
+				return nil, ErrUnexpectedSigningMethod
 			}
 			return *d.ed25519Key, nil
 		},
@@ -66,20 +66,20 @@ func (d *Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 		}
 
 		switch {
-		case errors.Is(err, UnexpectedSigningMethodError):
+		case errors.Is(err, ErrUnexpectedSigningMethod):
 		case errors.Is(err, jwt.ErrSignatureInvalid):
 		case errors.Is(err, jwt.ErrTokenExpired):
 		case errors.Is(err, jwt.ErrTokenNotValidYet):
 		case errors.Is(err, jwt.ErrTokenMalformed):
 			return nil, err
 		default:
-			return nil, InvalidTokenError
+			return nil, ErrInvalidToken
 		}
 	}
 
 	// Check if the token is valid
 	if !token.Valid {
-		return nil, InvalidTokenError
+		return nil, ErrInvalidToken
 	}
 	return token, nil
 }
@@ -97,7 +97,7 @@ func (d *Ed25519Validator) GetClaims(rawToken string) (
 	// Get token claims
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, InvalidClaimsError
+		return nil, ErrInvalidClaims
 	}
 
 	return &claims, nil
@@ -120,7 +120,7 @@ func (d *Ed25519Validator) ValidateClaims(
 		return nil, err
 	}
 	if !areValid {
-		return nil, InvalidTokenError
+		return nil, ErrInvalidToken
 	}
 
 	return claims, nil

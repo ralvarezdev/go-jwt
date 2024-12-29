@@ -16,13 +16,13 @@ func NewEd25519Issuer(privateKey []byte) (*Ed25519Issuer, error) {
 	// Parse the private key
 	key, err := jwt.ParseEdPrivateKeyFromPEM(privateKey)
 	if err != nil {
-		return nil, gojwt.UnableToParsePrivateKeyError
+		return nil, gojwt.ErrUnableToParsePrivateKey
 	}
 
 	// Ensure the key is of type ED25519 private key
 	ed25519Key, ok := key.(ed25519.PrivateKey)
 	if !ok {
-		return nil, gojwt.InvalidKeyTypeError
+		return nil, gojwt.ErrInvalidKeyType
 	}
 
 	return &Ed25519Issuer{

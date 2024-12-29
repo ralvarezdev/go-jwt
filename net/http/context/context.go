@@ -1,26 +1,34 @@
 package context
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
 	"github.com/golang-jwt/jwt/v5"
 	gojwt "github.com/ralvarezdev/go-jwt"
 	gojwtgin "github.com/ralvarezdev/go-jwt/gin"
+	gojwthttp "github.com/ralvarezdev/go-jwt/net/http"
+	"net/http"
 )
 
 // SetCtxRawToken sets the raw token in the context
-func SetCtxRawToken(ctx *gin.Context, rawToken *string) {
-	ctx.Set(gojwtgin.AuthorizationHeaderKey, *rawToken)
+func SetCtxRawToken(r *http.Request, rawToken *string) {
+	ctx := context.WithValue(
+		r.Context(),
+		gojwthttp.AuthorizationHeaderKey,
+		*rawToken,
+	)
+	r = r.WithContext(ctx)
 }
 
 // SetCtxTokenClaims sets the token claims in the context
-func SetCtxTokenClaims(ctx *gin.Context, claims *jwt.MapClaims) {
-	ctx.Set(gojwt.CtxTokenClaimsKey, *claims)
+func SetCtxTokenClaims(r *http.Request, claims *jwt.MapClaims) {
+	ctx := context.WithValue(r.Context(), gojwt.CtxTokenClaimsKey, *claims)
+	r = r.WithContext(ctx)
 }
 
 // GetCtxRawToken tries to get the raw token from the context
-func GetCtxRawToken(ctx *gin.Context) (string, error) {
+func GetCtxRawToken(r *http.Request) (string, error) {
 	// Get the token from the context
-	value := ctx.Value(gojwtgin.AuthorizationHeaderKey)
+	value := r.Context().Value(gojwtgin.AuthorizationHeaderKey)
 	if value == nil {
 		return "", gojwt.ErrMissingTokenInContext
 	}
@@ -35,9 +43,9 @@ func GetCtxRawToken(ctx *gin.Context) (string, error) {
 }
 
 // GetCtxTokenClaims tries to get the token claims from the context
-func GetCtxTokenClaims(ctx *gin.Context) (*jwt.MapClaims, error) {
+func GetCtxTokenClaims(r *http.Request) (*jwt.MapClaims, error) {
 	// Get the token claims from the context
-	value := ctx.Value(gojwt.CtxTokenClaimsKey)
+	value := r.Context().Value(gojwt.CtxTokenClaimsKey)
 	if value == nil {
 		return nil, gojwt.ErrMissingTokenClaimsInContext
 	}
