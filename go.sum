@@ -71,6 +71,7 @@ github.com/ralvarezdev/go-flags v0.2.0 h1:NdMuJgCv2f9RysYOMHQQM1BT9HGv6PPNDRYPT5
 github.com/ralvarezdev/go-flags v0.2.0/go.mod h1:pYw9H7NJ07Y5asZDC/EI5bpBLR0kdL2ISsh6X5ws+3s=
 github.com/ralvarezdev/go-flags v0.2.2 h1:8X4d6k4Cxl4ElHIVbM3atoDLJW2HnWaoMAsFLKxNFwU=
 github.com/ralvarezdev/go-flags v0.2.2/go.mod h1:xc0ii1VySdiV/s17KRo1GJ6bLxy5eOv93Oaz/mSlxtw=
+github.com/ralvarezdev/go-flags v0.2.3/go.mod h1:xc0ii1VySdiV/s17KRo1GJ6bLxy5eOv93Oaz/mSlxtw=
 github.com/ralvarezdev/go-logger v0.1.0 h1:i2AI1nlxU6Hizvk75Vc8wtFydiVrqIeeRbJwiuO/69A=
 github.com/ralvarezdev/go-logger v0.1.0/go.mod h1:v5OvFrkS+wsYNTCVegXWiRhBtcYrQJr4LDMDntvpAos=
 github.com/ralvarezdev/go-logger v0.2.2 h1:j58spza2L6s+vAibifHSuUPrXm0+6nWZWR3SOg8ihBk=

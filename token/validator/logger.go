@@ -14,7 +14,7 @@ type Logger struct {
 func NewLogger(logger gologger.Logger) (*Logger, error) {
 	// Check if the logger is nil
 	if logger == nil {
-		return nil, gologger.NilLoggerError
+		return nil, gologger.ErrNilLogger
 	}
 
 	return &Logger{logger: logger}, nil

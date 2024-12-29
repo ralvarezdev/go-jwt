@@ -14,7 +14,7 @@ type Logger struct {
 func NewLogger(logger gologger.Logger) (*Logger, error) {
 	// Check if the logger is nil
 	if logger == nil {
-		return nil, gologger.NilLoggerError
+		return nil, gologger.ErrNilLogger
 	}
 
 	return &Logger{logger: logger}, nil
@@ -22,5 +22,11 @@ func NewLogger(logger gologger.Logger) (*Logger, error) {
 
 // IssuedToken logs a message when the server issues a token
 func (l *Logger) IssuedToken() {
-	l.logger.LogMessage(gologger.NewLogMessage("issued token", gologgerstatus.StatusInfo, nil))
+	l.logger.LogMessage(
+		gologger.NewLogMessage(
+			"issued token",
+			gologgerstatus.StatusInfo,
+			nil,
+		),
+	)
 }

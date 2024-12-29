@@ -7,7 +7,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/ralvarezdev/go-databases v0.2.1
-	github.com/ralvarezdev/go-flags v0.2.2
+	github.com/ralvarezdev/go-flags v0.2.3
 	github.com/ralvarezdev/go-logger v0.2.2
 	golang.org/x/crypto v0.31.0
 )
