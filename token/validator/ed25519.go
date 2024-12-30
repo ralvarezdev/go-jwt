@@ -5,6 +5,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	goflagmode "github.com/ralvarezdev/go-flags/mode"
 	gojwt "github.com/ralvarezdev/go-jwt"
+	gojwtclaims "github.com/ralvarezdev/go-jwt/token/claims"
 	gojwtinterception "github.com/ralvarezdev/go-jwt/token/interception"
 	"golang.org/x/crypto/ed25519"
 )
@@ -12,20 +13,22 @@ import (
 // Ed25519Validator handles parsing and validation of JWT tokens with ED25519 public key
 type Ed25519Validator struct {
 	ed25519Key      *ed25519.PublicKey
-	claimsValidator ClaimsValidator
+	claimsValidator gojwtclaims.Validator
 	mode            *goflagmode.Flag
 }
 
 // NewEd25519Validator returns a new validator by parsing the given file path as an ED25519 public key
 func NewEd25519Validator(
-	publicKey []byte, claimsValidator ClaimsValidator, mode *goflagmode.Flag,
+	publicKey []byte,
+	claimsValidator gojwtclaims.Validator,
+	mode *goflagmode.Flag,
 ) (*Ed25519Validator, error) {
 	// Check if either the token validator or the mode flag is nil
 	if claimsValidator == nil {
 		return nil, ErrNilClaimsValidator
 	}
 	if mode == nil {
-		return nil, goflagmode.NilModeFlagError
+		return nil, goflagmode.ErrNilModeFlag
 	}
 
 	// Parse the public key
