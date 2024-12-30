@@ -30,7 +30,7 @@ func NewDefaultTokenValidator(redisClient *redis.Client) (
 ) {
 	// Check if the Redis client is nil
 	if redisClient == nil {
-		return nil, godatabasesredis.NilClientError
+		return nil, godatabasesredis.ErrNilClient
 	}
 
 	return &DefaultTokenValidator{redisClient: redisClient}, nil
