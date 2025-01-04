@@ -6,9 +6,9 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/ralvarezdev/go-databases v0.2.2
-	github.com/ralvarezdev/go-flags v0.2.3
-	github.com/ralvarezdev/go-logger v0.2.2
+	github.com/ralvarezdev/go-databases v0.3.5
+	github.com/ralvarezdev/go-flags v0.2.6
+	github.com/ralvarezdev/go-logger v0.3.0
 	golang.org/x/crypto v0.31.0
 )
 

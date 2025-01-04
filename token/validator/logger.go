@@ -25,8 +25,7 @@ func (l *Logger) ValidatedToken() {
 	l.logger.LogMessage(
 		gologger.NewLogMessage(
 			"Validated token",
-			gologgerstatus.StatusInfo,
-			nil,
+			gologgerstatus.Info,
 		),
 	)
 }
@@ -36,8 +35,7 @@ func (l *Logger) MissingTokenClaimsUserId() {
 	l.logger.LogMessage(
 		gologger.NewLogMessage(
 			"Missing  user ID in token claims",
-			gologgerstatus.StatusFailed,
-			nil,
+			gologgerstatus.Failed,
 		),
 	)
 }

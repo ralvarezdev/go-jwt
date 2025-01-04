@@ -25,8 +25,7 @@ func (l *Logger) IssuedToken() {
 	l.logger.LogMessage(
 		gologger.NewLogMessage(
 			"issued token",
-			gologgerstatus.StatusInfo,
-			nil,
+			gologgerstatus.Info,
 		),
 	)
 }

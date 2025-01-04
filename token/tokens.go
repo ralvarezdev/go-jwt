@@ -3,7 +3,7 @@ package token
 // Token represents a token type
 type Token string
 
-const (
+var (
 	// RefreshToken represents a refresh token
 	RefreshToken Token = "refresh_token"
 
