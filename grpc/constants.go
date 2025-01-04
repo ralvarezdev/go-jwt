@@ -1,17 +1,9 @@
 package grpc
 
-type AuthorizationIdx int
+var (
+	// AuthorizationTokenIdx is the index for the authorization token
+	AuthorizationTokenIdx = 0
 
-const (
-	TokenIdx AuthorizationIdx = iota
-)
-
-// Int returns the integer value of the index
-func (i AuthorizationIdx) Int() int {
-	return int(i)
-}
-
-const (
 	// AuthorizationMetadataKey is the key for the authorization metadata
 	AuthorizationMetadataKey = "authorization"
 )
