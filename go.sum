@@ -65,6 +65,7 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/ralvarezdev/go-databases v0.3.7 h1:a7ydNo1jIeXQkOzmq8MtFANyibZx2+Jrt53wweiQr78=
 github.com/ralvarezdev/go-databases v0.3.7/go.mod h1:8DU2j7UTB531ERFCSmJMOTph2zEFr3LvZslXqNi38VA=
+github.com/ralvarezdev/go-databases v0.3.8/go.mod h1:ONpTCKufMjj76vRCOIa6+2YszW9q4xk1zvQnbipYeJw=
 github.com/ralvarezdev/go-flags v0.3.1 h1:YxGYUonmr0dwJL+9oDY/4GqCl1CYwYDJExpGXXMc9rU=
 github.com/ralvarezdev/go-flags v0.3.1/go.mod h1:R3yVBYvzwqfOp26LidaiJ/zftVAnPC3pKunVpV/vosE=
 github.com/ralvarezdev/go-logger v0.4.4 h1:EHibl8vrZMtpTp+cBgOYS3IFredFwjMLBfSvZNvCtWU=
