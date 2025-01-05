@@ -1,7 +1,6 @@
 package validator
 
 import (
-	gologger "github.com/ralvarezdev/go-logger"
 	gologgermode "github.com/ralvarezdev/go-logger/mode"
 	gologgermodenamed "github.com/ralvarezdev/go-logger/mode/named"
 )
