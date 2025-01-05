@@ -2,40 +2,32 @@ package validator
 
 import (
 	gologger "github.com/ralvarezdev/go-logger"
-	gologgerstatus "github.com/ralvarezdev/go-logger/status"
+	gologgermode "github.com/ralvarezdev/go-logger/mode"
+	gologgermodenamed "github.com/ralvarezdev/go-logger/mode/named"
 )
 
 // Logger is the JWT validator logger
 type Logger struct {
-	logger gologger.Logger
+	logger gologgermodenamed.Logger
 }
 
 // NewLogger creates a new JWT validator logger
-func NewLogger(logger gologger.Logger) (*Logger, error) {
-	// Check if the logger is nil
-	if logger == nil {
-		return nil, gologger.ErrNilLogger
+func NewLogger(header string, modeLogger gologgermode.Logger) (*Logger, error) {
+	// Initialize the mode named logger
+	namedLogger, err := gologgermodenamed.NewDefaultLogger(header, modeLogger)
+	if err != nil {
+		return nil, err
 	}
 
-	return &Logger{logger: logger}, nil
+	return &Logger{logger: namedLogger}, nil
 }
 
 // ValidatedToken logs a message when the server validates a token
 func (l *Logger) ValidatedToken() {
-	l.logger.LogMessage(
-		gologger.NewLogMessage(
-			"Validated token",
-			gologgerstatus.Info,
-		),
-	)
+	l.logger.Debug("validated token")
 }
 
 // MissingTokenClaimsUserId logs the missing token claims user ID
 func (l *Logger) MissingTokenClaimsUserId() {
-	l.logger.LogMessage(
-		gologger.NewLogMessage(
-			"Missing  user ID in token claims",
-			gologgerstatus.Failed,
-		),
-	)
+	l.logger.Warning("missing  user id in token claims")
 }

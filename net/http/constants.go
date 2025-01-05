@@ -1,6 +1,6 @@
 package http
 
-const (
+var (
 	// AuthorizationHeaderKey is the key of the authorization header
 	AuthorizationHeaderKey = "Authorization"
 )

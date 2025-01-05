@@ -1,31 +1,27 @@
 package issuer
 
 import (
-	gologger "github.com/ralvarezdev/go-logger"
-	gologgerstatus "github.com/ralvarezdev/go-logger/status"
+	gologgermode "github.com/ralvarezdev/go-logger/mode"
+	gologgermodenamed "github.com/ralvarezdev/go-logger/mode/named"
 )
 
 // Logger is the JWT issuer logger
 type Logger struct {
-	logger gologger.Logger
+	logger gologgermodenamed.Logger
 }
 
 // NewLogger creates a new JWT issuer logger
-func NewLogger(logger gologger.Logger) (*Logger, error) {
-	// Check if the logger is nil
-	if logger == nil {
-		return nil, gologger.ErrNilLogger
+func NewLogger(header string, modeLogger gologgermode.Logger) (*Logger, error) {
+	// Initialize the mode named logger
+	namedLogger, err := gologgermodenamed.NewDefaultLogger(header, modeLogger)
+	if err != nil {
+		return nil, err
 	}
 
-	return &Logger{logger: logger}, nil
+	return &Logger{logger: namedLogger}, nil
 }
 
 // IssuedToken logs a message when the server issues a token
 func (l *Logger) IssuedToken() {
-	l.logger.LogMessage(
-		gologger.NewLogMessage(
-			"issued token",
-			gologgerstatus.Info,
-		),
-	)
+	l.logger.Debug("issued token")
 }

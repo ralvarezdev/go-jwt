@@ -3,7 +3,9 @@ package go_jwt
 const (
 	// BearerPrefix is the prefix for the bearer token
 	BearerPrefix = "Bearer"
+)
 
+var (
 	// CtxTokenClaimsKey is the key for the JWT context claims
 	CtxTokenClaimsKey = "jwt_claims"
 

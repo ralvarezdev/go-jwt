@@ -65,10 +65,16 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/ralvarezdev/go-databases v0.3.5 h1:QVNcxfWfnw/S3TvcOa3pVbBAvpIa75nTLt+0avG/OUw=
 github.com/ralvarezdev/go-databases v0.3.5/go.mod h1:BuraFROR2c+89COE4z77GfCLdfBks6tjAjB5sZehW4w=
+github.com/ralvarezdev/go-databases v0.3.6 h1:uuukXnN7fZymLnM0llZ7E9ULFLo1Ys+hf3qkgvPj+q4=
+github.com/ralvarezdev/go-databases v0.3.6/go.mod h1:8DU2j7UTB531ERFCSmJMOTph2zEFr3LvZslXqNi38VA=
 github.com/ralvarezdev/go-flags v0.2.5 h1:SCD/H8qDL5mPHqIuBpHdURgATF3c9rm+OWUNwnV0uKs=
 github.com/ralvarezdev/go-flags v0.2.5/go.mod h1:5uCMKlCrSOon33DPwVQqLVkokl984YDGDT7QbxY8jDU=
+github.com/ralvarezdev/go-flags v0.3.0 h1:JItUzutZKiVsYxQGRjF9DsGTBvRo3ScadMz5s6YUcKY=
+github.com/ralvarezdev/go-flags v0.3.0/go.mod h1:R3yVBYvzwqfOp26LidaiJ/zftVAnPC3pKunVpV/vosE=
 github.com/ralvarezdev/go-logger v0.3.0 h1:KjIA2NEEPsHy8vOpdPYO21fCMEx8XmbIfhRlqd7WjVI=
 github.com/ralvarezdev/go-logger v0.3.0/go.mod h1:v5OvFrkS+wsYNTCVegXWiRhBtcYrQJr4LDMDntvpAos=
+github.com/ralvarezdev/go-logger v0.4.3 h1:Fat1PyHr1zoVVbX88Nb4FiIkw1WYdzEhgIqkU2nf8bE=
+github.com/ralvarezdev/go-logger v0.4.3/go.mod h1:IUxZUO1YOByDagoOfFnmz2EHD30Z9TPufXrkDlucWTM=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
