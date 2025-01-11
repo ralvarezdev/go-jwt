@@ -31,7 +31,7 @@ func NewEd25519Issuer(privateKey []byte) (*Ed25519Issuer, error) {
 }
 
 // IssueToken issues a new token for the given user with the given roles
-func (i *Ed25519Issuer) IssueToken(claims *jwt.MapClaims) (string, error) {
+func (i *Ed25519Issuer) IssueToken(claims jwt.Claims) (string, error) {
 	// Create a new token with the claims
 	token := jwt.NewWithClaims(&jwt.SigningMethodEd25519{}, claims)
 

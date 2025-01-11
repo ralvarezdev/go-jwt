@@ -6,5 +6,5 @@ import (
 
 // Issuer is the interface for JWT tokens issuing
 type Issuer interface {
-	IssueToken(claims *jwt.MapClaims) (string, error)
+	IssueToken(claims jwt.Claims) (string, error)
 }
