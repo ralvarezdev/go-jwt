@@ -64,7 +64,8 @@ func (d *Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 		},
 	)
 	if err != nil {
-		if !d.mode.IsProd() {
+		// Check if the mode is debug
+		if d.mode != nil && d.mode.IsDebug() {
 			return nil, err
 		}
 
