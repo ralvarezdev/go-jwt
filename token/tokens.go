@@ -15,3 +15,15 @@ var (
 func (t Token) String() string {
 	return string(t)
 }
+
+// Abbreviation returns the abbreviation of the token
+func (t Token) Abbreviation() (string, error) {
+	switch t {
+	case RefreshToken:
+		return "RT", nil
+	case AccessToken:
+		return "AT", nil
+	default:
+		return "", ErrUnexpectedTokenType
+	}
+}

@@ -4,6 +4,9 @@ import (
 	"context"
 	"github.com/go-redis/redis/v8"
 	godatabasesredis "github.com/ralvarezdev/go-databases/redis"
+	gojwttoken "github.com/ralvarezdev/go-jwt/token"
+	gostringsadd "github.com/ralvarezdev/go-strings/add"
+	gostringsseparator "github.com/ralvarezdev/go-strings/separator"
 	"time"
 )
 
@@ -28,21 +31,39 @@ func NewTokenValidatorService(redisClient *redis.Client) (
 }
 
 // GetKey gets the JWT Identifier key
-func (d *TokenValidatorService) GetKey(jti string) string {
-	return godatabasesredis.GetKey(jti, JwtIdentifierPrefix)
+func (d *TokenValidatorService) GetKey(
+	token gojwttoken.Token,
+	id string,
+) (string, error) {
+	// Get the token string
+	tokenPrefix, err := token.Abbreviation()
+	if err != nil {
+		return "", err
+	}
+
+	return gostringsadd.Prefixes(
+		id,
+		gostringsseparator.Dots,
+		JwtIdentifierPrefix,
+		tokenPrefix,
+	), nil
 }
 
 // Set sets the token with the value and period
 func (d *TokenValidatorService) Set(
-	jti string,
+	token gojwttoken.Token,
+	id string,
 	value interface{},
 	expiresAt time.Time,
 ) error {
 	// Get the key
-	key := d.GetKey(jti)
+	key, err := d.GetKey(token, id)
+	if err != nil {
+		return err
+	}
 
 	// Set the initial value
-	if err := d.redisClient.Set(
+	if err = d.redisClient.Set(
 		context.Background(),
 		key,
 		value,
@@ -56,12 +77,18 @@ func (d *TokenValidatorService) Set(
 }
 
 // Has checks if the token is valid
-func (d *TokenValidatorService) Has(jti string) (bool, error) {
+func (d *TokenValidatorService) Has(
+	token gojwttoken.Token,
+	id string,
+) (bool, error) {
 	// Get the key
-	key := d.GetKey(jti)
+	key, err := d.GetKey(token, id)
+	if err != nil {
+		return false, err
+	}
 
 	// Check the JWT Identifier
-	_, err := d.redisClient.Get(context.Background(), key).Result()
+	_, err = d.redisClient.Get(context.Background(), key).Result()
 	if err != nil {
 		return false, err
 	}
@@ -70,9 +97,15 @@ func (d *TokenValidatorService) Has(jti string) (bool, error) {
 }
 
 // Get gets the token
-func (d *TokenValidatorService) Get(jti string) (interface{}, error) {
+func (d *TokenValidatorService) Get(
+	token gojwttoken.Token,
+	id string,
+) (interface{}, error) {
 	// Get the key
-	key := d.GetKey(jti)
+	key, err := d.GetKey(token, id)
+	if err != nil {
+		return nil, err
+	}
 
 	// Get the value
 	value, err := d.redisClient.Get(
@@ -86,9 +119,15 @@ func (d *TokenValidatorService) Get(jti string) (interface{}, error) {
 }
 
 // Delete deletes the token
-func (d *TokenValidatorService) Delete(jti string) error {
+func (d *TokenValidatorService) Delete(
+	token gojwttoken.Token,
+	id string,
+) error {
 	// Get the key
-	key := d.GetKey(jti)
+	key, err := d.GetKey(token, id)
+	if err != nil {
+		return err
+	}
 
 	// Delete the key
 	return d.redisClient.Del(

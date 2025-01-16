@@ -2,16 +2,24 @@ package cache
 
 import (
 	gocachetimed "github.com/ralvarezdev/go-cache/timed"
+	gojwttoken "github.com/ralvarezdev/go-jwt/token"
+	gostringsadd "github.com/ralvarezdev/go-strings/add"
+	gostringsseparator "github.com/ralvarezdev/go-strings/separator"
 	"time"
 )
 
 type (
 	// TokenValidator interface
 	TokenValidator interface {
-		Set(id string, value interface{}, expiresAt time.Time) error
-		Has(id string) (bool, error)
-		Get(id string) (interface{}, bool)
-		Delete(id string) error
+		Set(
+			token gojwttoken.Token,
+			id string,
+			value interface{},
+			expiresAt time.Time,
+		) error
+		Has(token gojwttoken.Token, id string) (bool, error)
+		Get(token gojwttoken.Token, id string) (interface{}, bool)
+		Delete(token gojwttoken.Token, id string) error
 	}
 
 	// TokenValidatorService struct
@@ -27,27 +35,79 @@ func NewTokenValidatorService() *TokenValidatorService {
 	}
 }
 
+// GetKey gets the key for the cache
+func (t *TokenValidatorService) GetKey(
+	token gojwttoken.Token,
+	id string,
+) (string, error) {
+	// Get the token string
+	tokenPrefix, err := token.Abbreviation()
+	if err != nil {
+		return "", err
+	}
+
+	return gostringsadd.Prefixes(id, gostringsseparator.Dots, tokenPrefix), nil
+}
+
 // Set sets a token in the cache
 func (t *TokenValidatorService) Set(
+	token gojwttoken.Token,
 	id string,
 	value interface{},
 	expiresAt time.Time,
 ) error {
-	return t.Cache.Set(id, gocachetimed.NewItem(value, expiresAt))
+	// Get the key
+	key, err := t.GetKey(token, id)
+	if err != nil {
+		return err
+	}
+
+	// Set the token in the cache
+	return t.Cache.Set(key, gocachetimed.NewItem(value, expiresAt))
 }
 
 // Has checks if a token exists in the cache
-func (t *TokenValidatorService) Has(id string) (bool, error) {
-	return t.Cache.Has(id), nil
+func (t *TokenValidatorService) Has(
+	token gojwttoken.Token,
+	id string,
+) (bool, error) {
+	// Get the key
+	key, err := t.GetKey(token, id)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if the token exists in the cache
+	return t.Cache.Has(key), nil
 }
 
 // Get gets a token from the cache
-func (t *TokenValidatorService) Get(id string) (interface{}, bool) {
-	return t.Cache.Get(id)
+func (t *TokenValidatorService) Get(
+	token gojwttoken.Token,
+	id string,
+) (interface{}, bool) {
+	// Get the key
+	key, err := t.GetKey(token, id)
+	if err != nil {
+		return nil, false
+	}
+
+	// Get the token from the cache
+	return t.Cache.Get(key)
 }
 
 // Delete deletes a token from the cache
-func (t *TokenValidatorService) Delete(id string) error {
-	t.Cache.Delete(id)
+func (t *TokenValidatorService) Delete(
+	token gojwttoken.Token,
+	id string,
+) error {
+	// Get the key
+	key, err := t.GetKey(token, id)
+	if err != nil {
+		return err
+	}
+
+	// Delete the token from the cache
+	t.Cache.Delete(key)
 	return nil
 }
