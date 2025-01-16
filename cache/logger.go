@@ -55,6 +55,14 @@ func (l *Logger) GetTokenFromCacheFailed(err error) {
 	)
 }
 
+// HasTokenInCacheFailed logs the has token in cache failed event
+func (l *Logger) HasTokenInCacheFailed(err error) {
+	l.logger.Error(
+		"has token in cache failed",
+		err,
+	)
+}
+
 // DeleteTokenFromCache logs the delete token from cache event
 func (l *Logger) DeleteTokenFromCache(token gojwttoken.Token, id int64) {
 	l.logger.Debug(

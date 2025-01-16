@@ -24,14 +24,16 @@ type (
 
 	// TokenValidatorService struct
 	TokenValidatorService struct {
+		logger *Logger
 		gocachetimed.Cache
 	}
 )
 
 // NewTokenValidatorService creates a new token validator service
-func NewTokenValidatorService() *TokenValidatorService {
+func NewTokenValidatorService(logger *Logger) *TokenValidatorService {
 	return &TokenValidatorService{
-		Cache: gocachetimed.Cache{},
+		Cache:  gocachetimed.Cache{},
+		logger: logger,
 	}
 }
 
@@ -63,7 +65,14 @@ func (t *TokenValidatorService) Set(
 	}
 
 	// Set the token in the cache
-	return t.Cache.Set(key, gocachetimed.NewItem(value, expiresAt))
+	err = t.Cache.Set(key, gocachetimed.NewItem(value, expiresAt))
+	if err != nil {
+		// Log the error
+		if t.logger != nil {
+			t.logger.SetTokenToCacheFailed(err)
+		}
+	}
+	return err
 }
 
 // Has checks if a token exists in the cache
