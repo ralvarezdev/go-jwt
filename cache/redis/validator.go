@@ -36,19 +36,23 @@ func (d *TokenValidatorService) GetKey(jti string) string {
 func (d *TokenValidatorService) Set(
 	jti string,
 	value interface{},
-	period time.Duration,
+	expiresAt time.Time,
 ) error {
 	// Get the key
 	key := d.GetKey(jti)
 
 	// Set the initial value
-	_, err := d.redisClient.Set(
+	if err := d.redisClient.Set(
 		context.Background(),
 		key,
 		value,
-		period,
-	).Result()
-	return err
+		0,
+	).Err(); err != nil {
+		return err
+	}
+
+	// Set expiration time for the key as a UNIX timestamp
+	return d.redisClient.ExpireAt(context.Background(), key, expiresAt).Err()
 }
 
 // Has checks if the token is valid
@@ -87,9 +91,8 @@ func (d *TokenValidatorService) Delete(jti string) error {
 	key := d.GetKey(jti)
 
 	// Delete the key
-	_, err := d.redisClient.Del(
+	return d.redisClient.Del(
 		context.Background(),
 		key,
-	).Result()
-	return err
+	).Err()
 }

@@ -8,7 +8,7 @@ import (
 type (
 	// TokenValidator interface
 	TokenValidator interface {
-		Set(id string, value interface{}, period time.Duration) error
+		Set(id string, value interface{}, expiresAt time.Time) error
 		Has(id string) (bool, error)
 		Get(id string) (interface{}, bool)
 		Delete(id string) error
@@ -31,9 +31,9 @@ func NewTokenValidatorService() *TokenValidatorService {
 func (t *TokenValidatorService) Set(
 	id string,
 	value interface{},
-	period time.Duration,
+	expiresAt time.Time,
 ) error {
-	return t.Cache.Set(id, gocachetimed.NewItem(value, time.Now().Add(period)))
+	return t.Cache.Set(id, gocachetimed.NewItem(value, expiresAt))
 }
 
 // Has checks if a token exists in the cache
