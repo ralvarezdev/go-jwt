@@ -8,6 +8,7 @@ import (
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
 	gostringsseparator "github.com/ralvarezdev/go-strings/separator"
+	"strconv"
 	"time"
 )
 
@@ -54,24 +55,17 @@ func (d *TokenValidatorService) GetKey(
 	), nil
 }
 
-// Set sets the token with the value and period
-func (d *TokenValidatorService) Set(
-	token gojwttoken.Token,
-	id string,
-	value interface{},
+// setWithFormattedKey sets the token with the value and expiration
+func (d *TokenValidatorService) setWithFormattedKey(
+	key string,
+	isValid bool,
 	expiresAt time.Time,
 ) error {
-	// Get the key
-	key, err := d.GetKey(token, id)
-	if err != nil {
-		return err
-	}
-
 	// Set the initial value
-	if err = d.redisClient.Set(
+	if err := d.redisClient.Set(
 		context.Background(),
 		key,
-		value,
+		isValid,
 		0,
 	).Err(); err != nil {
 		// Log the error
@@ -82,7 +76,7 @@ func (d *TokenValidatorService) Set(
 	}
 
 	// Set expiration time for the key as a UNIX timestamp
-	err = d.redisClient.ExpireAt(context.Background(), key, expiresAt).Err()
+	err := d.redisClient.ExpireAt(context.Background(), key, expiresAt).Err()
 	if err != nil {
 		// Log the error
 		if d.logger != nil {
@@ -92,57 +86,24 @@ func (d *TokenValidatorService) Set(
 	return err
 }
 
-// Has checks if the token is valid
-func (d *TokenValidatorService) Has(
+// Set sets the token with the value and expiration
+func (d *TokenValidatorService) Set(
 	token gojwttoken.Token,
 	id string,
-) (bool, error) {
+	isValid bool,
+	expiresAt time.Time,
+) error {
 	// Get the key
 	key, err := d.GetKey(token, id)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	// Check the JWT Identifier
-	_, err = d.redisClient.Get(context.Background(), key).Result()
-	if err != nil {
-		// Log the error
-		if d.logger != nil {
-			d.logger.HasTokenInCacheFailed(err)
-		}
-		return false, err
-	}
-	return true, nil
+	return d.setWithFormattedKey(key, isValid, expiresAt)
 }
 
-// Get gets the token
-func (d *TokenValidatorService) Get(
-	token gojwttoken.Token,
-	id string,
-) (interface{}, error) {
-	// Get the key
-	key, err := d.GetKey(token, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the value
-	value, err := d.redisClient.Get(
-		context.Background(),
-		key,
-	).Result()
-	if err != nil {
-		// Log the error
-		if d.logger != nil {
-			d.logger.GetTokenFromCacheFailed(err)
-		}
-		return nil, err
-	}
-	return value, err
-}
-
-// Delete deletes the token
-func (d *TokenValidatorService) Delete(
+// Revoke revokes the token
+func (d *TokenValidatorService) Revoke(
 	token gojwttoken.Token,
 	id string,
 ) error {
@@ -152,16 +113,44 @@ func (d *TokenValidatorService) Delete(
 		return err
 	}
 
-	// Delete the key
-	err = d.redisClient.Del(
+	// Get the current TTL of the key
+	ttl, err := d.redisClient.TTL(context.Background(), key).Result()
+	if err != nil {
+		return err
+	}
+
+	// Update the value maintaining the TTL
+	return d.setWithFormattedKey(key, false, time.Now().Add(ttl))
+}
+
+// IsValid checks if the token is valid
+func (d *TokenValidatorService) IsValid(
+	token gojwttoken.Token,
+	id string,
+) (bool, error) {
+	// Get the key
+	key, err := d.GetKey(token, id)
+	if err != nil {
+		return false, err
+	}
+
+	// Get the value
+	isValid, err := d.redisClient.Get(
 		context.Background(),
 		key,
-	).Err()
+	).Result()
 	if err != nil {
 		// Log the error
 		if d.logger != nil {
-			d.logger.DeleteTokenFromCacheFailed(err)
+			d.logger.GetTokenFromCacheFailed(err)
 		}
+		return false, err
 	}
-	return err
+
+	// Parse the value
+	parsedIsValue, err := strconv.ParseBool(isValid)
+	if err != nil {
+		return false, err
+	}
+	return parsedIsValue, nil
 }

@@ -39,6 +39,22 @@ func (l *Logger) SetTokenToCacheFailed(err error) {
 	)
 }
 
+// RevokeTokenFromCache logs the revoke token from cache event
+func (l *Logger) RevokeTokenFromCache(token gojwttoken.Token, id int64) {
+	l.logger.Debug(
+		"revoke token from cache",
+		fmt.Sprintf("token: %s, id: %d", token, id),
+	)
+}
+
+// RevokeTokenFromCacheFailed logs the revoke token from cache failed event
+func (l *Logger) RevokeTokenFromCacheFailed(err error) {
+	l.logger.Error(
+		"revoke token from cache failed",
+		err,
+	)
+}
+
 // GetTokenFromCache logs the get token from cache event
 func (l *Logger) GetTokenFromCache(token gojwttoken.Token, id int64) {
 	l.logger.Debug(
@@ -51,30 +67,6 @@ func (l *Logger) GetTokenFromCache(token gojwttoken.Token, id int64) {
 func (l *Logger) GetTokenFromCacheFailed(err error) {
 	l.logger.Error(
 		"get token from cache failed",
-		err,
-	)
-}
-
-// HasTokenInCacheFailed logs the has token in cache failed event
-func (l *Logger) HasTokenInCacheFailed(err error) {
-	l.logger.Error(
-		"has token in cache failed",
-		err,
-	)
-}
-
-// DeleteTokenFromCache logs the delete token from cache event
-func (l *Logger) DeleteTokenFromCache(token gojwttoken.Token, id int64) {
-	l.logger.Debug(
-		"delete token from cache",
-		fmt.Sprintf("token: %s, id: %d", token, id),
-	)
-}
-
-// DeleteTokenFromCacheFailed logs the delete token from cache failed event
-func (l *Logger) DeleteTokenFromCacheFailed(err error) {
-	l.logger.Error(
-		"delete token from cache failed",
 		err,
 	)
 }

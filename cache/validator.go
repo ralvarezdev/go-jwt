@@ -1,6 +1,7 @@
 package cache
 
 import (
+	gocache "github.com/ralvarezdev/go-cache"
 	gocachetimed "github.com/ralvarezdev/go-cache/timed"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
@@ -14,25 +15,24 @@ type (
 		Set(
 			token gojwttoken.Token,
 			id string,
-			value interface{},
+			isValid bool,
 			expiresAt time.Time,
 		) error
-		Has(token gojwttoken.Token, id string) (bool, error)
-		Get(token gojwttoken.Token, id string) (interface{}, bool)
-		Delete(token gojwttoken.Token, id string) error
+		Revoke(token gojwttoken.Token, id string) error
+		IsValid(token gojwttoken.Token, id string) (bool, error)
 	}
 
 	// TokenValidatorService struct
 	TokenValidatorService struct {
 		logger *Logger
-		gocachetimed.Cache
+		cache  gocachetimed.Cache
 	}
 )
 
 // NewTokenValidatorService creates a new token validator service
 func NewTokenValidatorService(logger *Logger) *TokenValidatorService {
 	return &TokenValidatorService{
-		Cache:  gocachetimed.Cache{},
+		cache:  gocachetimed.Cache{},
 		logger: logger,
 	}
 }
@@ -55,7 +55,7 @@ func (t *TokenValidatorService) GetKey(
 func (t *TokenValidatorService) Set(
 	token gojwttoken.Token,
 	id string,
-	value interface{},
+	isValid bool,
 	expiresAt time.Time,
 ) error {
 	// Get the key
@@ -65,7 +65,7 @@ func (t *TokenValidatorService) Set(
 	}
 
 	// Set the token in the cache
-	err = t.Cache.Set(key, gocachetimed.NewItem(value, expiresAt))
+	err = t.cache.Set(key, gocachetimed.NewItem(isValid, expiresAt))
 	if err != nil {
 		// Log the error
 		if t.logger != nil {
@@ -75,38 +75,8 @@ func (t *TokenValidatorService) Set(
 	return err
 }
 
-// Has checks if a token exists in the cache
-func (t *TokenValidatorService) Has(
-	token gojwttoken.Token,
-	id string,
-) (bool, error) {
-	// Get the key
-	key, err := t.GetKey(token, id)
-	if err != nil {
-		return false, err
-	}
-
-	// Check if the token exists in the cache
-	return t.Cache.Has(key), nil
-}
-
-// Get gets a token from the cache
-func (t *TokenValidatorService) Get(
-	token gojwttoken.Token,
-	id string,
-) (interface{}, bool) {
-	// Get the key
-	key, err := t.GetKey(token, id)
-	if err != nil {
-		return nil, false
-	}
-
-	// Get the token from the cache
-	return t.Cache.Get(key)
-}
-
-// Delete deletes a token from the cache
-func (t *TokenValidatorService) Delete(
+// Revoke revokes a token in the cache
+func (t *TokenValidatorService) Revoke(
 	token gojwttoken.Token,
 	id string,
 ) error {
@@ -116,7 +86,32 @@ func (t *TokenValidatorService) Delete(
 		return err
 	}
 
-	// Delete the token from the cache
-	t.Cache.Delete(key)
-	return nil
+	// Revoke the token in the cache
+	err = t.cache.UpdateValue(key, false)
+	if err != nil {
+		// Log the error
+		if t.logger != nil {
+			t.logger.RevokeTokenFromCacheFailed(err)
+		}
+	}
+	return err
+}
+
+// IsValid checks if a token is valid in the cache
+func (t *TokenValidatorService) IsValid(
+	token gojwttoken.Token,
+	id string,
+) (bool, error) {
+	// Get the key
+	key, err := t.GetKey(token, id)
+	if err != nil {
+		return false, err
+	}
+
+	// Get the token from the cache
+	isValid, found := t.cache.Get(key)
+	if !found {
+		return false, gocache.ErrItemNotFound
+	}
+	return isValid.(bool), nil
 }

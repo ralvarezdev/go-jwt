@@ -63,8 +63,8 @@ github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6
 github.com/pelletier/go-toml/v2 v2.2.2/go.mod h1:1t835xjRzz80PqgE6HHgN2JOsmgYu/h4qDAS4n929Rs=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/ralvarezdev/go-cache v0.1.0 h1:yZeWQ8BKsHIU0tkhgOrnaIa+Ayt63cLn0l7ha3uBPZs=
-github.com/ralvarezdev/go-cache v0.1.0/go.mod h1:uxdoDOgKOj0tQReWRA7rc1RtiFPhg8tfzVK6nJJ7QKo=
+github.com/ralvarezdev/go-cache v0.1.1 h1:Gd+F6ghWEDNUG/EYtVOiYPnw6rV3aXenpnkEXBvZTUA=
+github.com/ralvarezdev/go-cache v0.1.1/go.mod h1:uxdoDOgKOj0tQReWRA7rc1RtiFPhg8tfzVK6nJJ7QKo=
 github.com/ralvarezdev/go-databases v0.4.13 h1:thB7s0XwOTfAumUFDbelABH77NesyMOJI1VX3If1dw4=
 github.com/ralvarezdev/go-databases v0.4.13/go.mod h1:JOUqccAyW1lAriqYEkUmvAtMeraAsAeT71gw0xj0vhc=
 github.com/ralvarezdev/go-flags v0.3.1 h1:YxGYUonmr0dwJL+9oDY/4GqCl1CYwYDJExpGXXMc9rU=
