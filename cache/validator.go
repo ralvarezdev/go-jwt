@@ -25,14 +25,14 @@ type (
 	// TokenValidatorService struct
 	TokenValidatorService struct {
 		logger *Logger
-		cache  gocachetimed.Cache
+		cache  *gocachetimed.Cache
 	}
 )
 
 // NewTokenValidatorService creates a new token validator service
 func NewTokenValidatorService(logger *Logger) *TokenValidatorService {
 	return &TokenValidatorService{
-		cache:  gocachetimed.Cache{},
+		cache:  gocachetimed.NewCache(),
 		logger: logger,
 	}
 }
