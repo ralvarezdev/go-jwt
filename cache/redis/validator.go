@@ -3,11 +3,10 @@ package redis
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	godatabasesredis "github.com/ralvarezdev/go-databases/redis"
+	godatabases "github.com/ralvarezdev/go-databases"
 	gojwtcache "github.com/ralvarezdev/go-jwt/cache"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
-	gostringsseparator "github.com/ralvarezdev/go-strings/separator"
 	"strconv"
 	"time"
 )
@@ -30,10 +29,10 @@ func NewTokenValidatorService(
 ) {
 	// Check if the Redis client is nil
 	if redisClient == nil {
-		return nil, godatabasesredis.ErrNilClient
+		return nil, godatabases.ErrNilConnection
 	}
 
-	return &TokenValidatorService{redisClient: redisClient, logger: logger}, nil
+	return &TokenValidatorService{redisClient, logger}, nil
 }
 
 // GetKey gets the JWT Identifier key
@@ -49,7 +48,7 @@ func (d *TokenValidatorService) GetKey(
 
 	return gostringsadd.Prefixes(
 		id,
-		gostringsseparator.Dots,
+		JwtIdentifierSeparator,
 		JwtIdentifierPrefix,
 		tokenPrefix,
 	), nil

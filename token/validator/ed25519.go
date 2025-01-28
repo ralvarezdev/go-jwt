@@ -12,7 +12,7 @@ import (
 
 // Ed25519Validator handles parsing and validation of JWT tokens with ED25519 public key
 type Ed25519Validator struct {
-	ed25519Key      *ed25519.PublicKey
+	publicKey       *ed25519.PublicKey
 	claimsValidator gojwtclaims.Validator
 	mode            *goflagmode.Flag
 }
@@ -44,7 +44,7 @@ func NewEd25519Validator(
 	}
 
 	return &Ed25519Validator{
-		ed25519Key:      &ed25519Key,
+		publicKey:       &ed25519Key,
 		claimsValidator: claimsValidator,
 		mode:            mode,
 	}, nil
@@ -60,7 +60,7 @@ func (d *Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 			if _, ok := rawToken.Method.(*jwt.SigningMethodEd25519); !ok {
 				return nil, ErrUnexpectedSigningMethod
 			}
-			return *d.ed25519Key, nil
+			return *d.publicKey, nil
 		},
 	)
 	if err != nil {

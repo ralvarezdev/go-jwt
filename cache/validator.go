@@ -5,7 +5,6 @@ import (
 	gocachetimed "github.com/ralvarezdev/go-cache/timed"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
-	gostringsseparator "github.com/ralvarezdev/go-strings/separator"
 	"time"
 )
 
@@ -48,7 +47,7 @@ func (t *TokenValidatorService) GetKey(
 		return "", err
 	}
 
-	return gostringsadd.Prefixes(id, gostringsseparator.Dots, tokenPrefix), nil
+	return gostringsadd.Prefixes(id, JwtIdentifierSeparator, tokenPrefix), nil
 }
 
 // Set sets a token in the cache

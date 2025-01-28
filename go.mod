@@ -6,11 +6,11 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/ralvarezdev/go-cache v0.1.1
-	github.com/ralvarezdev/go-databases v0.4.13
-	github.com/ralvarezdev/go-flags v0.3.1
-	github.com/ralvarezdev/go-logger v0.4.5
-	github.com/ralvarezdev/go-strings v0.1.6
+	github.com/ralvarezdev/go-cache v0.1.2
+	github.com/ralvarezdev/go-databases v0.5.0
+	github.com/ralvarezdev/go-flags v0.3.2
+	github.com/ralvarezdev/go-logger v0.4.6
+	github.com/ralvarezdev/go-strings v0.1.7
 	golang.org/x/crypto v0.32.0
 )
 
