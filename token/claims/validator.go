@@ -2,13 +2,13 @@ package claims
 
 import (
 	"github.com/golang-jwt/jwt/v5"
-	gojwtinterception "github.com/ralvarezdev/go-jwt/token/interception"
+	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 )
 
 // Validator interface
 type Validator interface {
 	ValidateClaims(
 		claims *jwt.MapClaims,
-		interception gojwtinterception.Interception,
+		token gojwttoken.Token,
 	) (bool, error)
 }

@@ -5,8 +5,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	goflagmode "github.com/ralvarezdev/go-flags/mode"
 	gojwt "github.com/ralvarezdev/go-jwt"
+	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gojwtclaims "github.com/ralvarezdev/go-jwt/token/claims"
-	gojwtinterception "github.com/ralvarezdev/go-jwt/token/interception"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -107,10 +107,10 @@ func (d *Ed25519Validator) GetClaims(rawToken string) (
 	return &claims, nil
 }
 
-// ValidateClaims validates the given claims
+// ValidateClaims validates the given token claims based on the given token type and returns the claims if valid
 func (d *Ed25519Validator) ValidateClaims(
 	rawToken string,
-	interception gojwtinterception.Interception,
+	token gojwttoken.Token,
 ) (*jwt.MapClaims, error) {
 	// Get the claims
 	claims, err := d.GetClaims(rawToken)
@@ -119,7 +119,7 @@ func (d *Ed25519Validator) ValidateClaims(
 	}
 
 	// Check if the token claims are valid
-	areValid, err := d.claimsValidator.ValidateClaims(claims, interception)
+	areValid, err := d.claimsValidator.ValidateClaims(claims, token)
 	if err != nil {
 		return nil, err
 	}
@@ -128,15 +128,4 @@ func (d *Ed25519Validator) ValidateClaims(
 	}
 
 	return claims, nil
-}
-
-// GetValidatedClaims parses, validates and returns the claims of the given JWT raw token
-func (d *Ed25519Validator) GetValidatedClaims(
-	rawToken string,
-	interception gojwtinterception.Interception,
-) (
-	*jwt.MapClaims, error,
-) {
-	// Validate the claims
-	return d.ValidateClaims(rawToken, interception)
 }
