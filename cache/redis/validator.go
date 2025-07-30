@@ -2,13 +2,14 @@ package redis
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/go-redis/redis/v8"
 	godatabases "github.com/ralvarezdev/go-databases"
 	gojwtcache "github.com/ralvarezdev/go-jwt/cache"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
-	"strconv"
-	"time"
 )
 
 type (

@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+
 	"github.com/golang-jwt/jwt/v5"
 	goflagmode "github.com/ralvarezdev/go-flags/mode"
 	gojwt "github.com/ralvarezdev/go-jwt"

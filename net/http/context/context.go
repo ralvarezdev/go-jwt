@@ -2,9 +2,10 @@ package context
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/golang-jwt/jwt/v5"
 	gojwt "github.com/ralvarezdev/go-jwt"
-	"net/http"
 )
 
 // SetCtxTokenClaims sets the token claims in the context

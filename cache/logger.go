@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gologgermode "github.com/ralvarezdev/go-logger/mode"
 	gologgermodenamed "github.com/ralvarezdev/go-logger/mode/named"

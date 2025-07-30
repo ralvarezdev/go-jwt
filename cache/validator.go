@@ -1,11 +1,12 @@
 package cache
 
 import (
+	"time"
+
 	gocache "github.com/ralvarezdev/go-cache"
 	gocachetimed "github.com/ralvarezdev/go-cache/timed"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
-	"time"
 )
 
 type (
