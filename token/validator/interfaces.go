@@ -9,10 +9,10 @@ import (
 type (
 	Validator interface {
 		GetToken(rawToken string) (*jwt.Token, error)
-		GetClaims(rawToken string) (*jwt.MapClaims, error)
+		GetClaims(rawToken string) (jwt.MapClaims, error)
 		ValidateClaims(
 			rawToken string,
 			token gojwttoken.Token,
-		) (*jwt.MapClaims, error)
+		) (jwt.MapClaims, error)
 	}
 )

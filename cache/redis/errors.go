@@ -1,5 +1,5 @@
 package redis
 
-var (
+const (
 	ErrFailedToParseBoolValue = "failed to parse bool value: %v"
 )

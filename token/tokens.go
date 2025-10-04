@@ -1,7 +1,9 @@
 package token
 
-// Token represents a token type
-type Token string
+type (
+	// Token represents a token type
+	Token string
+)
 
 var (
 	// RefreshToken represents a refresh token
@@ -12,11 +14,20 @@ var (
 )
 
 // String returns the string representation of the token
+//
+// Returns:
+//
+//   - string: The string representation of the token
 func (t Token) String() string {
 	return string(t)
 }
 
 // Abbreviation returns the abbreviation of the token
+//
+// Returns:
+//
+//   - string: The abbreviation of the token
+//   - error: An error if the token type is unexpected
 func (t Token) Abbreviation() (string, error) {
 	switch t {
 	case RefreshToken:

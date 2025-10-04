@@ -11,14 +11,27 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-// Ed25519Validator handles parsing and validation of JWT tokens with ED25519 public key
-type Ed25519Validator struct {
-	publicKey       *ed25519.PublicKey
-	claimsValidator gojwtclaims.Validator
-	mode            *goflagmode.Flag
-}
+type (
+	// Ed25519Validator handles parsing and validation of JWT tokens with ED25519 public key
+	Ed25519Validator struct {
+		publicKey       ed25519.PublicKey
+		claimsValidator gojwtclaims.Validator
+		mode            *goflagmode.Flag
+	}
+)
 
 // NewEd25519Validator returns a new validator by parsing the given file path as an ED25519 public key
+//
+// Parameters:
+//
+//   - publicKey: The ED25519 public key in PEM format
+//   - claimsValidator: The token claims validator
+//   - mode: The mode flag to determine if debug mode is enabled
+//
+// Returns:
+//
+//   - *Ed25519Validator: The ED25519 validator
+//   - error: An error if the public key cannot be parsed or if any parameter is nil
 func NewEd25519Validator(
 	publicKey []byte,
 	claimsValidator gojwtclaims.Validator,
@@ -45,14 +58,23 @@ func NewEd25519Validator(
 	}
 
 	return &Ed25519Validator{
-		publicKey:       &ed25519Key,
+		publicKey:       ed25519Key,
 		claimsValidator: claimsValidator,
 		mode:            mode,
 	}, nil
 }
 
 // GetToken parses the given JWT raw token
-func (d *Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
+//
+// Parameters:
+//
+//   - rawToken: The raw JWT token string
+//
+// Returns:
+//
+//   - *jwt.Token: The parsed JWT token
+//   - error: An error if the token is invalid or if parsing fails
+func (d Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 	// Parse JWT and verify signature
 	token, err := jwt.Parse(
 		rawToken,
@@ -61,7 +83,7 @@ func (d *Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 			if _, ok := rawToken.Method.(*jwt.SigningMethodEd25519); !ok {
 				return nil, ErrUnexpectedSigningMethod
 			}
-			return *d.publicKey, nil
+			return d.publicKey, nil
 		},
 	)
 	if err != nil {
@@ -90,8 +112,17 @@ func (d *Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 }
 
 // GetClaims parses and validates the given JWT raw token
-func (d *Ed25519Validator) GetClaims(rawToken string) (
-	*jwt.MapClaims, error,
+//
+// Parameters:
+//
+//   - rawToken: The raw JWT token string
+//
+// Returns:
+//
+//   - jwt.MapClaims: The token claims
+//   - error: An error if the token is invalid, if parsing fails, or if the claims are of an unexpected type
+func (d Ed25519Validator) GetClaims(rawToken string) (
+	jwt.MapClaims, error,
 ) {
 	// Get the token
 	token, err := d.GetToken(rawToken)
@@ -105,14 +136,24 @@ func (d *Ed25519Validator) GetClaims(rawToken string) (
 		return nil, ErrInvalidClaims
 	}
 
-	return &claims, nil
+	return claims, nil
 }
 
 // ValidateClaims validates the given token claims based on the given token type and returns the claims if valid
-func (d *Ed25519Validator) ValidateClaims(
+//
+// Parameters:
+//
+//   - rawToken: The raw JWT token string
+//   - token: The token type
+//
+// Returns:
+//
+//   - jwt.MapClaims: The token claims if valid
+//   - error: An error if the token is invalid, if parsing fails, or if the claims are invalid
+func (d Ed25519Validator) ValidateClaims(
 	rawToken string,
 	token gojwttoken.Token,
-) (*jwt.MapClaims, error) {
+) (jwt.MapClaims, error) {
 	// Get the claims
 	claims, err := d.GetClaims(rawToken)
 	if err != nil {

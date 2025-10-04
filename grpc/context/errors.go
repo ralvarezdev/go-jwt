@@ -1,6 +1,8 @@
 package context
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrMissingToken              = errors.New("missing token")

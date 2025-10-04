@@ -1,73 +1,107 @@
 package cache
 
 import (
-	"fmt"
+	"log/slog"
 
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
-	gologgermode "github.com/ralvarezdev/go-logger/mode"
-	gologgermodenamed "github.com/ralvarezdev/go-logger/mode/named"
 )
 
-// Logger is the cache token validator logger
-type Logger struct {
-	logger gologgermodenamed.Logger
-}
-
-// NewLogger creates a new cache token validator logger
-func NewLogger(header string, modeLogger gologgermode.Logger) (*Logger, error) {
-	// Initialize the mode named logger
-	namedLogger, err := gologgermodenamed.NewDefaultLogger(header, modeLogger)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Logger{logger: namedLogger}, nil
-}
-
 // SetTokenToCache logs the set token to cache event
-func (l *Logger) SetTokenToCache(token gojwttoken.Token, id int64) {
-	l.logger.Debug(
-		"set token to cache",
-		fmt.Sprintf("token: %s, id: %d", token, id),
-	)
+//
+// Parameters:
+//
+//   - token: The token being set to cache
+//   - id: The ID associated with the token
+//   - logger: The logger to use for logging (optional, can be nil)
+func SetTokenToCache(token gojwttoken.Token, id int64, logger *slog.Logger) {
+	if logger != nil {
+		logger.Debug(
+			"set token to cache",
+			slog.String("token", token.String()),
+			slog.Int64("id", id),
+		)
+	}
 }
 
 // SetTokenToCacheFailed logs the set token to cache failed event
-func (l *Logger) SetTokenToCacheFailed(err error) {
-	l.logger.Error(
-		"set token to cache failed",
-		err,
-	)
+//
+// Parameters:
+//
+//   - err: The error that occurred while setting the token to cache
+//   - logger: The logger to use for logging (optional, can be nil)
+func SetTokenToCacheFailed(err error, logger *slog.Logger) {
+	if logger != nil {
+		logger.Error(
+			"set token to cache failed",
+			slog.String("error", err.Error()),
+		)
+	}
 }
 
 // RevokeTokenFromCache logs the revoke token from cache event
-func (l *Logger) RevokeTokenFromCache(token gojwttoken.Token, id int64) {
-	l.logger.Debug(
-		"revoke token from cache",
-		fmt.Sprintf("token: %s, id: %d", token, id),
-	)
+//
+// Parameters:
+//
+//   - token: The token being revoked from cache
+//   - id: The ID associated with the token
+//   - logger: The logger to use for logging (optional, can be nil)
+func RevokeTokenFromCache(
+	token gojwttoken.Token,
+	id int64,
+	logger *slog.Logger,
+) {
+	if logger != nil {
+		logger.Debug(
+			"revoke token from cache",
+			slog.String("token", token.String()),
+			slog.Int64("id", id),
+		)
+	}
 }
 
 // RevokeTokenFromCacheFailed logs the revoke token from cache failed event
-func (l *Logger) RevokeTokenFromCacheFailed(err error) {
-	l.logger.Error(
-		"revoke token from cache failed",
-		err,
-	)
+//
+// Parameters:
+//
+//   - err: The error that occurred while revoking the token from cache
+//   - logger: The logger to use for logging (optional, can be nil)
+func RevokeTokenFromCacheFailed(err error, logger *slog.Logger) {
+	if logger != nil {
+		logger.Error(
+			"revoke token from cache failed",
+			slog.String("error", err.Error()),
+		)
+	}
 }
 
 // GetTokenFromCache logs the get token from cache event
-func (l *Logger) GetTokenFromCache(token gojwttoken.Token, id int64) {
-	l.logger.Debug(
-		"get token from cache",
-		fmt.Sprintf("token: %s, id: %d", token, id),
-	)
+//
+// Parameters:
+//
+//   - token: The token being retrieved from cache
+//   - id: The ID associated with the token
+//   - logger: The logger to use for logging (optional, can be nil)
+func GetTokenFromCache(token gojwttoken.Token, id int64, logger *slog.Logger) {
+	if logger != nil {
+		logger.Debug(
+			"get token from cache",
+			slog.String("token", token.String()),
+			slog.Int64("id", id),
+		)
+	}
 }
 
 // GetTokenFromCacheFailed logs the get token from cache failed event
-func (l *Logger) GetTokenFromCacheFailed(err error) {
-	l.logger.Error(
-		"get token from cache failed",
-		err,
-	)
+//
+// Parameters:
+//
+//   - err: The error that occurred while retrieving the token from cache
+//   - logger: The logger to use for logging (optional, can be nil)
+func GetTokenFromCacheFailed(err error, logger *slog.Logger) {
+	if logger != nil {
+		logger.Error(
+			"get token from cache failed",
+			slog.String("error", err.Error()),
+		)
+	}
 }

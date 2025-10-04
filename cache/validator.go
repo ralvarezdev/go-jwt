@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"log/slog"
 	"time"
 
 	gocache "github.com/ralvarezdev/go-cache"
@@ -10,27 +11,26 @@ import (
 )
 
 type (
-	// TokenValidator interface
-	TokenValidator interface {
-		Set(
-			token gojwttoken.Token,
-			id string,
-			isValid bool,
-			expiresAt time.Time,
-		) error
-		Revoke(token gojwttoken.Token, id string) error
-		IsValid(token gojwttoken.Token, id string) (bool, error)
-	}
-
 	// TokenValidatorService struct
 	TokenValidatorService struct {
-		logger *Logger
+		logger *slog.Logger
 		cache  *gocachetimed.Cache
 	}
 )
 
 // NewTokenValidatorService creates a new token validator service
-func NewTokenValidatorService(logger *Logger) *TokenValidatorService {
+//
+// Parameters:
+//
+//   - logger: The logger (optional, can be nil)
+//
+// Returns:
+//
+//   - *TokenValidatorService: The token validator service
+func NewTokenValidatorService(logger *slog.Logger) *TokenValidatorService {
+	if logger != nil {
+		logger = logger.With(slog.String("component", "cache_token_validator"))
+	}
 	return &TokenValidatorService{
 		cache:  gocachetimed.NewCache(),
 		logger: logger,
@@ -38,10 +38,24 @@ func NewTokenValidatorService(logger *Logger) *TokenValidatorService {
 }
 
 // GetKey gets the key for the cache
+//
+// Parameters:
+//
+//   - token: The token
+//   - id: The ID associated with the token
+//
+// Returns:
+//
+//   - string: The key for the cache
+//   - error: An error if the token validator service is nil or if the token abbreviation fails
 func (t *TokenValidatorService) GetKey(
 	token gojwttoken.Token,
 	id string,
 ) (string, error) {
+	if t == nil {
+		return "", ErrNilTokenValidator
+	}
+
 	// Get the token string
 	tokenPrefix, err := token.Abbreviation()
 	if err != nil {
@@ -52,12 +66,27 @@ func (t *TokenValidatorService) GetKey(
 }
 
 // Set sets a token in the cache
+//
+// Parameters:
+//
+//   - token: The token
+//   - id: The ID associated with the token
+//   - isValid: Whether the token is valid
+//   - expiresAt: The expiration time of the token
+//
+// Returns:
+//
+//   - error: An error if the token validator service is nil or if setting the token in the cache fails
 func (t *TokenValidatorService) Set(
 	token gojwttoken.Token,
 	id string,
 	isValid bool,
 	expiresAt time.Time,
 ) error {
+	if t == nil {
+		return ErrNilTokenValidator
+	}
+
 	// Get the key
 	key, err := t.GetKey(token, id)
 	if err != nil {
@@ -67,19 +96,29 @@ func (t *TokenValidatorService) Set(
 	// Set the token in the cache
 	err = t.cache.Set(key, gocachetimed.NewItem(isValid, expiresAt))
 	if err != nil {
-		// Log the error
-		if t.logger != nil {
-			t.logger.SetTokenToCacheFailed(err)
-		}
+		SetTokenToCacheFailed(err, t.logger)
 	}
 	return err
 }
 
 // Revoke revokes a token in the cache
+//
+// Parameters:
+//
+//   - token: The token
+//   - id: The ID associated with the token
+//
+// Returns:
+//
+//   - error: An error if the token validator service is nil or if revoking the token in the cache fails
 func (t *TokenValidatorService) Revoke(
 	token gojwttoken.Token,
 	id string,
 ) error {
+	if t == nil {
+		return ErrNilTokenValidator
+	}
+
 	// Get the key
 	key, err := t.GetKey(token, id)
 	if err != nil {
@@ -89,19 +128,30 @@ func (t *TokenValidatorService) Revoke(
 	// Revoke the token in the cache
 	err = t.cache.UpdateValue(key, false)
 	if err != nil {
-		// Log the error
-		if t.logger != nil {
-			t.logger.RevokeTokenFromCacheFailed(err)
-		}
+		RevokeTokenFromCacheFailed(err, t.logger)
 	}
 	return err
 }
 
 // IsValid checks if a token is valid in the cache
+//
+// Parameters:
+//
+//   - token: The token
+//   - id: The ID associated with the token
+//
+// Returns:
+//
+//   - bool: Whether the token is valid
+//   - error: An error if the token validator service is nil or if checking the token in the cache fails
 func (t *TokenValidatorService) IsValid(
 	token gojwttoken.Token,
 	id string,
 ) (bool, error) {
+	if t == nil {
+		return false, ErrNilTokenValidator
+	}
+
 	// Get the key
 	key, err := t.GetKey(token, id)
 	if err != nil {
