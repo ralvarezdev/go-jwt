@@ -10,4 +10,5 @@ var (
 	ErrMissingTokenClaimsInContext        = errors.New("missing token claims in context")
 	ErrUnexpectedTokenTypeInContext       = errors.New("unexpected token type in context")
 	ErrUnexpectedTokenClaimsTypeInContext = errors.New("unexpected token claims type in context")
+	ErrEmptyToken                         = errors.New("empty token")
 )

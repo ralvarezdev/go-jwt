@@ -41,3 +41,39 @@ func GetCtxTokenClaims(ctx *gin.Context) (jwt.MapClaims, error) {
 
 	return claims, nil
 }
+
+// SetCtxToken sets the raw token in the context
+//
+// Parameters:
+//
+//   - ctx: The gin context
+//   - token: The raw token to set in the context
+func SetCtxToken(ctx *gin.Context, token string) {
+	ctx.Set(gojwt.CtxTokenKey, token)
+}
+
+// GetCtxToken tries to get the raw token from the context
+//
+// Parameters:
+//
+//   - ctx: The gin context
+//
+// Returns:
+//
+//   - string: The raw token from the context
+//   - error: An error if the token is not found or of an unexpected type
+func GetCtxToken(ctx *gin.Context) (string, error) {
+	// Get the token from the context
+	value := ctx.Value(gojwt.CtxTokenKey)
+	if value == nil {
+		return "", gojwt.ErrMissingTokenInContext
+	}
+
+	// Check the type of the value
+	token, ok := value.(string)
+	if !ok {
+		return "", gojwt.ErrUnexpectedTokenTypeInContext
+	}
+
+	return token, nil
+}

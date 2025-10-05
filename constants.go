@@ -9,6 +9,9 @@ var (
 	// CtxTokenClaimsKey is the key for the JWT context claims
 	CtxTokenClaimsKey = "jwt_claims"
 
+	// CtxTokenKey is the key for the JWT context token
+	CtxTokenKey = "jwt"
+
 	// IdClaim is the claim for the JWT ID
 	IdClaim = "jti"
 

@@ -48,3 +48,50 @@ func GetCtxTokenClaims(r *http.Request) (jwt.MapClaims, error) {
 
 	return claims, nil
 }
+
+// SetCtxToken sets the raw token in the context
+//
+// Parameters:
+//
+//   - r: The HTTP request
+//   - token: The raw token to set in the context
+//
+// Returns:
+//
+//   - *http.Request: The HTTP request with the raw token set in the context
+//   - error: An error if the token is empty
+func SetCtxToken(r *http.Request, token string) (*http.Request, error) {
+	// Check if the token is empty
+	if token == "" {
+		return nil, gojwt.ErrEmptyToken
+	}
+
+	ctx := context.WithValue(r.Context(), gojwt.CtxTokenKey, token)
+	return r.WithContext(ctx), nil
+}
+
+// GetCtxToken tries to get the raw token from the context
+//
+// Parameters:
+//
+//   - r: The HTTP request
+//
+// Returns:
+//
+//   - string: The raw token from the context
+//   - error: An error if the token is not found or of an unexpected type
+func GetCtxToken(r *http.Request) (string, error) {
+	// Get the token from the context
+	value := r.Context().Value(gojwt.CtxTokenKey)
+	if value == nil {
+		return "", gojwt.ErrMissingTokenInContext
+	}
+
+	// Check the type of the value
+	token, ok := value.(string)
+	if !ok {
+		return "", gojwt.ErrUnexpectedTokenTypeInContext
+	}
+
+	return token, nil
+}
