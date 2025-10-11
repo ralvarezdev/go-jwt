@@ -139,3 +139,31 @@ func GetCtxTokenClaimsJwtId(ctx context.Context) (string, error) {
 	}
 	return jwtId, nil
 }
+
+// ClearCtxTokenClaims clears the token claims from the context
+//
+// Parameters:
+//
+//   - ctx: The context to clear the token claims from
+//
+// Returns:
+//
+//   - context.Context: The context with the token claims cleared
+//   - error: An error if the context is nil
+func ClearCtxTokenClaims(ctx context.Context) (context.Context, error) {
+	return context.WithValue(ctx, gojwt.CtxTokenClaimsKey, nil), nil
+}
+
+// ClearCtxRawToken clears the raw token from the context
+//
+// Parameters:
+//
+//   - ctx: The context to clear the raw token from
+//
+// Returns:
+//
+//   - context.Context: The context with the raw token cleared
+//   - error: An error if the context is nil
+func ClearCtxRawToken(ctx context.Context) (context.Context, error) {
+	return context.WithValue(ctx, gojwtgrpc.AuthorizationMetadataKey, nil), nil
+}
