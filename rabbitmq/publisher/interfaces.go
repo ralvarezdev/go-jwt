@@ -7,6 +7,6 @@ import (
 type (
 	// Publisher is the interface for the JWT RabbitMQ publisher
 	Publisher interface {
-		SendTokenMessage(msg gojwtrabbitmq.TokensJTIMessage) error
+		SendTokenMessage(msg gojwtrabbitmq.TokensMessage) error
 	}
 )

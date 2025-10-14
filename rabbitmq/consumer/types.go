@@ -198,10 +198,10 @@ func (d *DefaultConsumer) Close() error {
 //
 // Returns:
 //
-//   - <-chan gojwtrabbitmq.TokensJTIMessage: a channel to receive the messages
+//   - <-chan gojwtrabbitmq.TokensMessage: a channel to receive the messages
 //   - error: an error if the consumer is nil or the channel is not open
 func (d *DefaultConsumer) ConsumeMessages(ctx context.Context) (
-	<-chan gojwtrabbitmq.TokensJTIMessage,
+	<-chan gojwtrabbitmq.TokensMessage,
 	error,
 ) {
 	if d == nil {
@@ -232,7 +232,7 @@ func (d *DefaultConsumer) ConsumeMessages(ctx context.Context) (
 
 	// Create the channel to return messages
 	msgCh := make(
-		chan gojwtrabbitmq.TokensJTIMessage,
+		chan gojwtrabbitmq.TokensMessage,
 		d.consumerMessagesBufferSize,
 	)
 
@@ -258,6 +258,9 @@ func (d *DefaultConsumer) ConsumeMessages(ctx context.Context) (
 	for {
 		select {
 		case <-ctx.Done():
+			if d.logger != nil {
+				d.logger.Info("Context done. Exiting consume loop.")
+			}
 			return nil, ctx.Err()
 		case <-d.tickerStopCh:
 			if d.logger != nil {
@@ -267,7 +270,7 @@ func (d *DefaultConsumer) ConsumeMessages(ctx context.Context) (
 		case <-ticker.C:
 			// Poll the queue for messages
 			for msg := range deliveryCh {
-				var parsedMsg gojwtrabbitmq.TokensJTIMessage
+				var parsedMsg gojwtrabbitmq.TokensMessage
 				if err = json.Unmarshal(msg.Body, &parsedMsg); err != nil {
 					if d.logger != nil {
 						d.logger.Error(

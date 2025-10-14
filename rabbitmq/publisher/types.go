@@ -153,7 +153,7 @@ func (d *DefaultPublisher) Close() error {
 // Returns:
 //
 //   - error: an error if the message could not be sent
-func (d *DefaultPublisher) SendTokenMessage(msg gojwtrabbitmq.TokensJTIMessage) error {
+func (d *DefaultPublisher) SendTokenMessage(msg gojwtrabbitmq.TokensMessage) error {
 	// Check if the publisher is nil
 	if d == nil {
 		return gojwtrabbitmq.ErrNilPublisher

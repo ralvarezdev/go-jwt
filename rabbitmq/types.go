@@ -1,9 +1,9 @@
 package rabbitmq
 
 type (
-	// TokensJTIMessage represents a message containing new and revoked JWT IDs
-	TokensJTIMessage struct {
-		NewJTIs     []string `json:"new_jtis"`
+	// TokensMessage represents a message containing new and revoked JWT IDs
+	TokensMessage struct {
+		IssuedJTIs  []string `json:"issued_jtis"`
 		RevokedJTIs []string `json:"revoked_jtis"`
 	}
 )
