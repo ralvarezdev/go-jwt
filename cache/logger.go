@@ -16,7 +16,7 @@ import (
 func SetTokenToCache(token gojwttoken.Token, id int64, logger *slog.Logger) {
 	if logger != nil {
 		logger.Debug(
-			"set token to cache",
+			"Set token to cache",
 			slog.String("token", token.String()),
 			slog.Int64("id", id),
 		)
@@ -32,7 +32,7 @@ func SetTokenToCache(token gojwttoken.Token, id int64, logger *slog.Logger) {
 func SetTokenToCacheFailed(err error, logger *slog.Logger) {
 	if logger != nil {
 		logger.Error(
-			"set token to cache failed",
+			"Set token to cache failed",
 			slog.String("error", err.Error()),
 		)
 	}
@@ -52,7 +52,7 @@ func RevokeTokenFromCache(
 ) {
 	if logger != nil {
 		logger.Debug(
-			"revoke token from cache",
+			"Revoke token from cache",
 			slog.String("token", token.String()),
 			slog.Int64("id", id),
 		)
@@ -68,7 +68,7 @@ func RevokeTokenFromCache(
 func RevokeTokenFromCacheFailed(err error, logger *slog.Logger) {
 	if logger != nil {
 		logger.Error(
-			"revoke token from cache failed",
+			"Revoke token from cache failed",
 			slog.String("error", err.Error()),
 		)
 	}
@@ -84,7 +84,7 @@ func RevokeTokenFromCacheFailed(err error, logger *slog.Logger) {
 func GetTokenFromCache(token gojwttoken.Token, id int64, logger *slog.Logger) {
 	if logger != nil {
 		logger.Debug(
-			"get token from cache",
+			"Get token from cache",
 			slog.String("token", token.String()),
 			slog.Int64("id", id),
 		)
@@ -100,7 +100,7 @@ func GetTokenFromCache(token gojwttoken.Token, id int64, logger *slog.Logger) {
 func GetTokenFromCacheFailed(err error, logger *slog.Logger) {
 	if logger != nil {
 		logger.Error(
-			"get token from cache failed",
+			"Get token from cache failed",
 			slog.String("error", err.Error()),
 		)
 	}
