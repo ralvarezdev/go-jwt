@@ -81,6 +81,7 @@ github.com/ralvarezdev/go-databases v0.7.0/go.mod h1:c5fwtuzA+TrXCMR6kxYmu11Gl/Z
 github.com/ralvarezdev/go-databases v0.7.1/go.mod h1:c5fwtuzA+TrXCMR6kxYmu11Gl/ZLV/2SdDf5d1ULWUM=
 github.com/ralvarezdev/go-databases v0.7.2 h1:JHoYJa7uoPzVa+r7ePE4wOSNFAUNyXZ1zfek7KD1+Lo=
 github.com/ralvarezdev/go-databases v0.7.2/go.mod h1:c5fwtuzA+TrXCMR6kxYmu11Gl/ZLV/2SdDf5d1ULWUM=
+github.com/ralvarezdev/go-databases v0.7.3/go.mod h1:c5fwtuzA+TrXCMR6kxYmu11Gl/ZLV/2SdDf5d1ULWUM=
 github.com/ralvarezdev/go-flags v0.3.5 h1:oUq2IIf3Bg63iOKoG/8HbS6yxHq5AWnMAykZRsMKcCw=
 github.com/ralvarezdev/go-flags v0.3.5/go.mod h1:R3yVBYvzwqfOp26LidaiJ/zftVAnPC3pKunVpV/vosE=
 github.com/ralvarezdev/go-flags v0.3.8 h1:b/doNRr2HsniEpz8NjbH2vxJH5WMeymIx0LAzDIOnOc=

@@ -8,7 +8,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/ralvarezdev/go-cache v0.1.3
-	github.com/ralvarezdev/go-databases v0.7.2
+	github.com/ralvarezdev/go-databases v0.7.3
 	github.com/ralvarezdev/go-flags v0.3.8
 	github.com/ralvarezdev/go-strings v0.1.16
 	golang.org/x/crypto v0.43.0

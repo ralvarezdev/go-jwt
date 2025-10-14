@@ -17,7 +17,7 @@ import (
 type (
 	// DefaultService is the default implementation of the Service interface
 	DefaultService struct {
-		handler  godatabasessql.Handler
+		godatabasessql.Handler
 		logger   *slog.Logger
 		consumer gojwtrabbitmqconsumer.Consumer
 		mutex    sync.Mutex
@@ -58,10 +58,100 @@ func NewDefaultService(
 	}
 
 	return &DefaultService{
-		handler:  handler,
+		Handler:  handler,
 		consumer: consumer,
 		logger:   logger,
 	}, nil
+}
+
+// Connect opens the database connection
+//
+// Returns:
+//
+//   - error: an error if the connection could not be opened
+func (d *DefaultService) Connect() error {
+	// Check if the service is nil
+	if d == nil {
+		return godatabases.ErrNilHandler
+	}
+
+	// Lock the mutex to ensure thread safety
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// Connect to the database
+	db, err := d.Handler.Connect()
+	if err != nil {
+		if d.logger != nil {
+			d.logger.Error(
+				"Failed to connect to database",
+				slog.String("error", err.Error()),
+			)
+		}
+		return err
+	}
+
+	// Ensure the table exists
+	if _, err = db.Exec(CreateTableQuery); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Disconnect closes the database connection
+//
+// Returns:
+//
+//   - error: an error if the connection could not be closed
+func (d *DefaultService) Disconnect() error {
+	// Check if the service is nil
+	if d == nil {
+		return godatabases.ErrNilHandler
+	}
+
+	// Lock the mutex to ensure thread safety
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// Disconnect from the database
+	if err := d.Handler.Disconnect(); err != nil {
+		if d.logger != nil {
+			d.logger.Error(
+				"Failed to disconnect from database",
+				slog.String("error", err.Error()),
+			)
+		}
+		return err
+	}
+
+	return nil
+}
+
+// DB is a helper function to get the database connection
+//
+// Returns:
+//
+//   - *sql.DB: the database connection
+func (d *DefaultService) DB() (*sql.DB, error) {
+	// Lock the mutex to ensure thread safety
+	d.mutex.Lock()
+
+	// Get the database connection
+	db, err := d.DB()
+	if err != nil {
+		d.mutex.Unlock()
+		if d.logger != nil {
+			d.logger.Error(
+				"Failed to get database connection",
+				slog.String("error", err.Error()),
+			)
+		}
+		return nil, err
+	}
+	d.mutex.Unlock()
+
+	return db, nil
 }
 
 // Start starts the service to listen for messages and update the SQLite database
@@ -73,36 +163,20 @@ func NewDefaultService(
 // Returns:
 //
 //   - error: an error if the service could not be started
-func (s *DefaultService) Start(ctx context.Context) error {
+func (d *DefaultService) Start(ctx context.Context) error {
 	// Check if the service is nil
-	if s == nil {
+	if d == nil {
 		return sql.ErrConnDone
 	}
 
-	// Lock the mutex to ensure thread safety
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	// Connect to the database
-	db, err := s.handler.Connect()
+	// Get the database connection
+	db, err := d.DB()
 	if err != nil {
-		if s.logger != nil {
-			s.logger.Error(
-				"Failed to connect to database",
-				slog.String("error", err.Error()),
-			)
-		}
-		return err
-	}
-	defer s.handler.Disconnect()
-
-	// Ensure the table exists
-	if _, err = db.Exec(CreateTableQuery); err != nil {
 		return err
 	}
 
 	// Start the consumer
-	tokensMessagesCh, err := s.consumer.ConsumeMessages(ctx)
+	tokensMessagesCh, err := d.consumer.ConsumeMessages(ctx)
 	if err != nil {
 		return err
 	}
@@ -111,15 +185,15 @@ func (s *DefaultService) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			if s.logger != nil {
-				s.logger.Info("Service context done, stopping service")
+			if d.logger != nil {
+				d.logger.Info("Service context done, stopping service")
 			}
 			return nil
 		case msg, ok := <-tokensMessagesCh:
 			// Check if the channel is closed
 			if !ok {
-				if s.logger != nil {
-					s.logger.Info("Message channel closed, stopping service")
+				if d.logger != nil {
+					d.logger.Info("Message channel closed, stopping service")
 				}
 				return nil
 			}
@@ -129,8 +203,8 @@ func (s *DefaultService) Start(ctx context.Context) error {
 				if _, err = db.Exec(
 					InsertTokenQuery,
 					issuedJTI,
-				); err != nil && s.logger != nil {
-					s.logger.Error(
+				); err != nil && d.logger != nil {
+					d.logger.Error(
 						"Failed to add JTI",
 						slog.String("jti", issuedJTI),
 						slog.String("error", err.Error()),
@@ -141,8 +215,8 @@ func (s *DefaultService) Start(ctx context.Context) error {
 				if _, err = db.Exec(
 					DeleteTokenQuery,
 					revokedJTI,
-				); err != nil && s.logger != nil {
-					s.logger.Error(
+				); err != nil && d.logger != nil {
+					d.logger.Error(
 						"Failed to remove JTI",
 						slog.String("jti", revokedJTI),
 						slog.String("error", err.Error()),
@@ -163,28 +237,17 @@ func (s *DefaultService) Start(ctx context.Context) error {
 //
 //   - bool: true if the JTI exists, false otherwise
 //   - error: an error if the validation could not be performed
-func (s *DefaultService) Validate(jti string) (bool, error) {
+func (d *DefaultService) Validate(jti string) (bool, error) {
 	// Check if the service is nil
-	if s == nil {
+	if d == nil {
 		return false, sql.ErrConnDone
 	}
 
-	// Lock the mutex to ensure thread safety
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	// Connect to the database
-	db, err := s.handler.Connect()
+	// Get the database connection
+	db, err := d.DB()
 	if err != nil {
-		if s.logger != nil {
-			s.logger.Error(
-				"Failed to connect to database",
-				slog.String("error", err.Error()),
-			)
-		}
 		return false, err
 	}
-	defer s.handler.Disconnect()
 
 	// Check if the JTI exists
 	var exists bool
@@ -193,8 +256,8 @@ func (s *DefaultService) Validate(jti string) (bool, error) {
 		jti,
 	).Scan(&exists)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		if s.logger != nil {
-			s.logger.Error(
+		if d.logger != nil {
+			d.logger.Error(
 				"Failed to validate JTI",
 				slog.String("jti", jti),
 				slog.String("error", err.Error()),
@@ -216,20 +279,20 @@ func (s *DefaultService) Validate(jti string) (bool, error) {
 //
 //   - bool: true if the claims are valid, false otherwise
 //   - error: an error if the validation could not be performed
-func (s *DefaultService) ValidateClaims(
+func (d *DefaultService) ValidateClaims(
 	claims map[string]interface{},
 	token gojwttoken.Token,
 ) (bool, error) {
 	// Check if the service is nil
-	if s == nil {
+	if d == nil {
 		return false, sql.ErrConnDone
 	}
 
 	// Extract the JTI from the claims
 	jti, ok := claims["jti"].(string)
 	if !ok || jti == "" {
-		if s.logger != nil {
-			s.logger.Error(
+		if d.logger != nil {
+			d.logger.Error(
 				"JTI claim is missing or invalid",
 				slog.String("token", token.String()),
 			)
@@ -238,5 +301,5 @@ func (s *DefaultService) ValidateClaims(
 	}
 
 	// Validate the JTI
-	return s.Validate(jti)
+	return d.Validate(jti)
 }
