@@ -190,7 +190,7 @@ func (d *DefaultConsumer) Close() error {
 	return nil
 }
 
-// ConsumeMessages consumes messages from the RabbitMQ queue
+// ConsumeTokenMessages consumes token messages from the RabbitMQ queue
 //
 // Parameters:
 //
@@ -200,7 +200,7 @@ func (d *DefaultConsumer) Close() error {
 //
 //   - <-chan gojwtrabbitmq.TokensMessage: a channel to receive the messages
 //   - error: an error if the consumer is nil or the channel is not open
-func (d *DefaultConsumer) ConsumeMessages(ctx context.Context) (
+func (d *DefaultConsumer) ConsumeTokenMessages(ctx context.Context) (
 	<-chan gojwtrabbitmq.TokensMessage,
 	error,
 ) {

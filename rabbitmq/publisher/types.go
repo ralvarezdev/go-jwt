@@ -144,16 +144,16 @@ func (d *DefaultPublisher) Close() error {
 	return nil
 }
 
-// SendTokenMessage sends a token JTI message to the RabbitMQ queue
+// PublishTokenMessage publishes a token JTI message to the RabbitMQ queue
 //
 // Parameters:
 //
-//   - msg: the token JTI message to send
+//   - msg: the token JTI message to publish
 //
 // Returns:
 //
-//   - error: an error if the message could not be sent
-func (d *DefaultPublisher) SendTokenMessage(msg gojwtrabbitmq.TokensMessage) error {
+//   - error: an error if the message could not be published
+func (d *DefaultPublisher) PublishTokenMessage(msg gojwtrabbitmq.TokensMessage) error {
 	// Check if the publisher is nil
 	if d == nil {
 		return gojwtrabbitmq.ErrNilPublisher

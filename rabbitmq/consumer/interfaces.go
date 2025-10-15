@@ -11,7 +11,7 @@ type (
 	Consumer interface {
 		Open() error
 		Close() error
-		ConsumeMessages(ctx context.Context) (
+		ConsumeTokenMessages(ctx context.Context) (
 			<-chan gojwtrabbitmq.TokensMessage,
 			error,
 		)
