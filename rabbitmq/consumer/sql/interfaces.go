@@ -13,6 +13,7 @@ type (
 		gojwtclaims.Validator
 		godatabasessql.Handler
 		Start(ctx context.Context)
-		Validate(jti string) (bool, error)
+		IsRefreshTokenValid(jti string) (bool, error)
+		IsAccessTokenValid(jti string) (bool, error)
 	}
 )

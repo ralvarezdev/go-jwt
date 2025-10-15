@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -15,16 +14,22 @@ import (
 type (
 	// DefaultConsumer is the default implementation of the Consumer interface
 	DefaultConsumer struct {
-		conn                       *amqp091.Connection
-		ch                         *amqp091.Channel
-		queue                      *amqp091.Queue
-		queueName                  string
-		logger                     *slog.Logger
-		period                     time.Duration
-		mutex                      sync.Mutex
-		isTickerRunning            atomic.Bool
-		tickerStopCh               chan struct{}
-		consumerMessagesBufferSize int
+		conn                                    *amqp091.Connection
+		ch                                      *amqp091.Channel
+		queue                                   *amqp091.Queue
+		queueName                               string
+		logger                                  *slog.Logger
+		period                                  time.Duration
+		mutex                                   sync.Mutex
+		tokensMessagesConsumerChannelBufferSize int
+	}
+
+	// DefaultTokensMessagesConsumer is the default implementation of the TokensMessagesConsumer interface
+	DefaultTokensMessagesConsumer struct {
+		period           time.Duration
+		deliveryCh       <-chan amqp091.Delivery
+		tokensMessagesCh chan gojwtrabbitmq.TokensMessage
+		logger           *slog.Logger
 	}
 )
 
@@ -35,7 +40,7 @@ type (
 //   - conn: the RabbitMQ connection
 //   - queueName: the name of the queue
 //   - period: the polling period
-//   - consumerMessagesChannelBufferSize: the size of the messages buffer channel
+//   - tokensMessagesConsumerChannelBufferSize: the buffer size for the messages channel
 //   - logger: the logger
 //
 // Returns:
@@ -46,7 +51,7 @@ func NewDefaultConsumer(
 	conn *amqp091.Connection,
 	queueName string,
 	period time.Duration,
-	consumerMessagesChannelBufferSize int,
+	tokensMessagesConsumerChannelBufferSize int,
 	logger *slog.Logger,
 ) (*DefaultConsumer, error) {
 	// Check if the connection is nil
@@ -65,8 +70,8 @@ func NewDefaultConsumer(
 	}
 
 	// Check if the consumerMessagesBufferSize is valid
-	if consumerMessagesChannelBufferSize <= 0 {
-		consumerMessagesChannelBufferSize = DefaultConsumerMessagesChannelBufferSize
+	if tokensMessagesConsumerChannelBufferSize <= 0 {
+		tokensMessagesConsumerChannelBufferSize = DefaultTokensMessageConsumerChannelBufferSize
 	}
 
 	if logger != nil {
@@ -77,13 +82,61 @@ func NewDefaultConsumer(
 
 	// Create a new consumer instance
 	consumer := &DefaultConsumer{
-		conn:                       conn,
-		logger:                     logger,
-		queueName:                  queueName,
-		period:                     period,
-		consumerMessagesBufferSize: consumerMessagesChannelBufferSize,
+		conn:                                    conn,
+		logger:                                  logger,
+		queueName:                               queueName,
+		period:                                  period,
+		tokensMessagesConsumerChannelBufferSize: tokensMessagesConsumerChannelBufferSize,
 	}
 	return consumer, nil
+}
+
+// NewDefaultTokensMessagesConsumer creates a new DefaultTokensMessagesConsumer
+//
+// Parameters:
+//
+//   - deliveryCh: the RabbitMQ delivery channel
+//   - bufferSize: the buffer size for the messages channel
+//   - period: the polling period
+//   - logger: the logger
+//
+// Returns:
+//
+//   - *DefaultTokensMessagesConsumer: the DefaultTokensMessagesConsumer instance
+//   - error: an error if the delivery channel is nil
+func NewDefaultTokensMessagesConsumer(
+	deliveryCh <-chan amqp091.Delivery,
+	bufferSize int,
+	period time.Duration,
+	logger *slog.Logger,
+) (*DefaultTokensMessagesConsumer, error) {
+	// Check if the delivery channel is nil
+	if deliveryCh == nil {
+		return nil, gojwtrabbitmq.ErrNilDeliveryChannel
+	}
+
+	// Check if the buffer size is valid
+	if bufferSize <= 0 {
+		bufferSize = DefaultTokensMessageConsumerChannelBufferSize
+	}
+
+	// Check if the period is valid
+	if period <= 0 {
+		period = DefaultTickerInterval
+	}
+
+	if logger != nil {
+		logger = logger.With(
+			slog.String("component", "jwt_rabbitmq_tokens_messages_consumer"),
+		)
+	}
+
+	return &DefaultTokensMessagesConsumer{
+		deliveryCh:       deliveryCh,
+		tokensMessagesCh: make(chan gojwtrabbitmq.TokensMessage, bufferSize),
+		period:           period,
+		logger:           logger,
+	}, nil
 }
 
 // Open opens a RabbitMQ channel
@@ -95,14 +148,6 @@ func (d *DefaultConsumer) Open() error {
 	// Check if the consumer is nil
 	if d == nil {
 		return gojwtrabbitmq.ErrNilConsumer
-	}
-
-	// Check if the ticker is already running
-	if d.isTickerRunning.Load() {
-		if d.logger != nil {
-			d.logger.Warn("Ticker is already running. Skipping open operation.")
-		}
-		return nil
 	}
 
 	// Lock the mutex to ensure thread safety
@@ -128,7 +173,7 @@ func (d *DefaultConsumer) Open() error {
 	d.ch = ch
 
 	// Declare the queue
-	q, err := gojwtrabbitmq.DeclareJTIQueue(d.ch, d.queueName)
+	q, err := gojwtrabbitmq.DeclareTokensMessageQueue(d.ch, d.queueName)
 	if err != nil {
 		d.logger.Error(
 			"Failed to declare a queue",
@@ -139,9 +184,6 @@ func (d *DefaultConsumer) Open() error {
 	}
 	d.queue = q
 	d.logger.Info("Consumer channel opened")
-
-	// Create a channel to signal the ticker to stop
-	d.tickerStopCh = make(chan struct{})
 	return nil
 }
 
@@ -154,18 +196,6 @@ func (d *DefaultConsumer) Close() error {
 	// Check if the consumer is nil
 	if d == nil {
 		return gojwtrabbitmq.ErrNilConsumer
-	}
-
-	// Check if the ticker is running and stop it
-	if d.isTickerRunning.Load() {
-		d.isTickerRunning.Store(false)
-
-		// Signal the ticker to stop
-		close(d.tickerStopCh)
-
-		if d.logger != nil {
-			d.logger.Info("Ticker stopped.")
-		}
 	}
 
 	// Lock the mutex to ensure thread safety
@@ -190,7 +220,7 @@ func (d *DefaultConsumer) Close() error {
 	return nil
 }
 
-// ConsumeTokenMessages consumes token messages from the RabbitMQ queue
+// CreateTokensMessagesConsumer creates a tokens messages consumer
 //
 // Parameters:
 //
@@ -198,26 +228,15 @@ func (d *DefaultConsumer) Close() error {
 //
 // Returns:
 //
-//   - <-chan gojwtrabbitmq.TokensMessage: a channel to receive the messages
-//   - error: an error if the consumer is nil or the channel is not open
-func (d *DefaultConsumer) ConsumeTokenMessages(ctx context.Context) (
-	<-chan gojwtrabbitmq.TokensMessage,
+//   - TokensMessagesConsumer: the tokens messages consumer
+//   - error: an error if the consumer could not be created
+func (d *DefaultConsumer) CreateTokensMessagesConsumer(ctx context.Context) (
+	TokensMessagesConsumer,
 	error,
 ) {
 	if d == nil {
 		return nil, gojwtrabbitmq.ErrNilConsumer
 	}
-
-	// Check if the ticker is already running
-	if d.isTickerRunning.Load() {
-		if d.logger != nil {
-			d.logger.Warn("Ticker is already running. Skipping consume operation.")
-		}
-		return nil, nil
-	}
-
-	// Mark the ticker as running
-	d.isTickerRunning.Store(true)
 
 	// Lock the mutex to ensure thread safety
 	d.mutex.Lock()
@@ -230,30 +249,50 @@ func (d *DefaultConsumer) ConsumeTokenMessages(ctx context.Context) (
 		}
 	}
 
-	// Create the channel to return messages
-	msgCh := make(
-		chan gojwtrabbitmq.TokensMessage,
-		d.consumerMessagesBufferSize,
-	)
-
-	// Create the ticker to poll the queue periodically
-	ticker := time.NewTicker(d.period)
-
-	// Declare the JTI queue
-	q, err := gojwtrabbitmq.DeclareJTIQueue(d.ch, d.queueName)
-	if err != nil {
-		return nil, err
-	}
-
 	// Create a channel to receive messages
-	deliveryCh, err := gojwtrabbitmq.CreateConsumeJTIDeliveryChWithCtx(
+	deliveryCh, err := gojwtrabbitmq.CreateConsumeTokensMessageDeliveryChWithCtx(
 		ctx,
 		d.ch,
-		q.Name,
+		d.queue.Name,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	// Create the tokens messages consumer
+	consumer, err := NewDefaultTokensMessagesConsumer(
+		deliveryCh,
+		d.tokensMessagesConsumerChannelBufferSize,
+		d.period,
+		d.logger,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return consumer, nil
+}
+
+// GetChannel returns the tokens message consumer channel
+//
+// Returns:
+//
+//   - <-chan gojwtrabbitmq.TokensMessage: the tokens message consumer channel
+func (d DefaultTokensMessagesConsumer) GetChannel() <-chan gojwtrabbitmq.TokensMessage {
+	return d.tokensMessagesCh
+}
+
+// ConsumeTokensMessages consumes a tokens message and sends it to the channel
+//
+// Parameters:
+//
+//   - ctx: the context
+//
+// Returns:
+func (d DefaultTokensMessagesConsumer) ConsumeTokensMessages(
+	ctx context.Context,
+) error {
+	// Create the ticker to poll the queue periodically
+	ticker := time.NewTicker(d.period)
 
 	for {
 		select {
@@ -261,17 +300,12 @@ func (d *DefaultConsumer) ConsumeTokenMessages(ctx context.Context) (
 			if d.logger != nil {
 				d.logger.Info("Context done. Exiting consume loop.")
 			}
-			return nil, ctx.Err()
-		case <-d.tickerStopCh:
-			if d.logger != nil {
-				d.logger.Info("Ticker stop signal received. Exiting consume loop.")
-			}
-			return nil, nil
+			return ctx.Err()
 		case <-ticker.C:
 			// Poll the queue for messages
-			for msg := range deliveryCh {
+			for msg := range d.deliveryCh {
 				var parsedMsg gojwtrabbitmq.TokensMessage
-				if err = json.Unmarshal(msg.Body, &parsedMsg); err != nil {
+				if err := json.Unmarshal(msg.Body, &parsedMsg); err != nil {
 					if d.logger != nil {
 						d.logger.Error(
 							"Error decoding message",
@@ -282,7 +316,7 @@ func (d *DefaultConsumer) ConsumeTokenMessages(ctx context.Context) (
 				}
 
 				// Send the message to the channel
-				msgCh <- parsedMsg
+				d.tokensMessagesCh <- parsedMsg
 			}
 		}
 	}

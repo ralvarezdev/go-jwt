@@ -97,7 +97,7 @@ func (d *DefaultPublisher) Open() error {
 	d.ch = ch
 
 	// Declare the queue
-	q, err := gojwtrabbitmq.DeclareJTIQueue(d.ch, d.queueName)
+	q, err := gojwtrabbitmq.DeclareTokensMessageQueue(d.ch, d.queueName)
 	if err != nil {
 		d.logger.Error(
 			"Failed to declare a queue",
@@ -144,19 +144,24 @@ func (d *DefaultPublisher) Close() error {
 	return nil
 }
 
-// PublishTokenMessage publishes a token JTI message to the RabbitMQ queue
+// PublishTokensMessage publishes a tokens message to the RabbitMQ queue
 //
 // Parameters:
 //
-//   - msg: the token JTI message to publish
+//   - msg: the tokens message to publish
 //
 // Returns:
 //
 //   - error: an error if the message could not be published
-func (d *DefaultPublisher) PublishTokenMessage(msg gojwtrabbitmq.TokensMessage) error {
+func (d *DefaultPublisher) PublishTokensMessage(msg *gojwtrabbitmq.TokensMessage) error {
 	// Check if the publisher is nil
 	if d == nil {
 		return gojwtrabbitmq.ErrNilPublisher
+	}
+
+	// Check if the message is nil
+	if msg == nil {
+		return gojwtrabbitmq.ErrNilMessage
 	}
 
 	// Lock the mutex to ensure thread safety

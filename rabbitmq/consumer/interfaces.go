@@ -7,12 +7,18 @@ import (
 )
 
 type (
+	// TokensMessagesConsumer is the interface for the JWT RabbitMQ tokens messages consumer
+	TokensMessagesConsumer interface {
+		GetChannel() <-chan gojwtrabbitmq.TokensMessage
+		ConsumeTokensMessages(ctx context.Context) error
+	}
+
 	// Consumer is the interface for the JWT RabbitMQ consumer
 	Consumer interface {
 		Open() error
 		Close() error
-		ConsumeTokenMessages(ctx context.Context) (
-			<-chan gojwtrabbitmq.TokensMessage,
+		CreateTokensMessagesConsumer(ctx context.Context) (
+			TokensMessagesConsumer,
 			error,
 		)
 	}
