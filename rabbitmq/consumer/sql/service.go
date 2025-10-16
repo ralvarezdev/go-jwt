@@ -54,7 +54,7 @@ func NewDefaultService(
 
 	if logger != nil {
 		logger = logger.With(
-			slog.String("component", "sqlite_jti_service"),
+			slog.String("component", "jwt_rabbitmq_consumer_sql_service"),
 		)
 	}
 
@@ -73,7 +73,7 @@ func NewDefaultService(
 func (d *DefaultService) Connect() error {
 	// Check if the service is nil
 	if d == nil {
-		return godatabases.ErrNilHandler
+		return godatabases.ErrNilService
 	}
 
 	// Lock the mutex to ensure thread safety
@@ -99,7 +99,6 @@ func (d *DefaultService) Connect() error {
 	if _, err = db.Exec(CreateAccessTokensTableQuery); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -111,7 +110,7 @@ func (d *DefaultService) Connect() error {
 func (d *DefaultService) Disconnect() error {
 	// Check if the service is nil
 	if d == nil {
-		return godatabases.ErrNilHandler
+		return godatabases.ErrNilService
 	}
 
 	// Lock the mutex to ensure thread safety
@@ -158,7 +157,7 @@ func (d *DefaultService) DB() (*sql.DB, error) {
 	return db, nil
 }
 
-// Start starts the service to listen for messages and update the SQLite database
+// Start starts the service to listen for messages and update the SQL database
 //
 // Parameters:
 //
