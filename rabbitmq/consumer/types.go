@@ -28,7 +28,7 @@ type (
 	DefaultTokensMessagesConsumer struct {
 		period           time.Duration
 		deliveryCh       <-chan amqp091.Delivery
-		tokensMessagesCh chan gojwtrabbitmq.TokensMessage
+		tokensMessagesCh chan *gojwtrabbitmq.TokensMessage
 		logger           *slog.Logger
 	}
 )
@@ -133,7 +133,7 @@ func NewDefaultTokensMessagesConsumer(
 
 	return &DefaultTokensMessagesConsumer{
 		deliveryCh:       deliveryCh,
-		tokensMessagesCh: make(chan gojwtrabbitmq.TokensMessage, bufferSize),
+		tokensMessagesCh: make(chan *gojwtrabbitmq.TokensMessage, bufferSize),
 		period:           period,
 		logger:           logger,
 	}, nil
@@ -277,7 +277,7 @@ func (d *DefaultConsumer) CreateTokensMessagesConsumer(ctx context.Context) (
 // Returns:
 //
 //   - <-chan gojwtrabbitmq.TokensMessage: the tokens message consumer channel
-func (d DefaultTokensMessagesConsumer) GetChannel() <-chan gojwtrabbitmq.TokensMessage {
+func (d DefaultTokensMessagesConsumer) GetChannel() <-chan *gojwtrabbitmq.TokensMessage {
 	return d.tokensMessagesCh
 }
 
@@ -316,7 +316,7 @@ func (d DefaultTokensMessagesConsumer) ConsumeTokensMessages(
 				}
 
 				// Send the message to the channel
-				d.tokensMessagesCh <- parsedMsg
+				d.tokensMessagesCh <- &parsedMsg
 			}
 		}
 	}

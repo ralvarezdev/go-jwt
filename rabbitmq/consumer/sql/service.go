@@ -217,6 +217,14 @@ func (d *DefaultService) Start(ctx context.Context) error {
 						return nil
 					}
 
+					// Check if the message is nil
+					if msg == nil {
+						if d.logger != nil {
+							d.logger.Warn("Received nil message, skipping")
+						}
+						continue
+					}
+
 					// Process the message
 					for _, issuedRefreshTokenJTI := range msg.IssuedRefreshTokensJTIs {
 						if _, err = db.Exec(

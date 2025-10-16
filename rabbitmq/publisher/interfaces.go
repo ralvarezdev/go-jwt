@@ -9,6 +9,6 @@ type (
 	Publisher interface {
 		Open() error
 		Close() error
-		PublishTokensMessage(msg gojwtrabbitmq.TokensMessage) error
+		PublishTokensMessage(msg *gojwtrabbitmq.TokensMessage) error
 	}
 )
