@@ -1,11 +1,16 @@
 package rabbitmq
 
 type (
-	// TokensMessage represents a message containing new and revoked JWT IDs
+	// TokenPair represents a pair of refresh and access token JTIs
+	TokenPair struct {
+		RefreshTokenJTI string `json:"refresh_token_jti"`
+		AccessTokenJTI  string `json:"access_token_jti"`
+	}
+
+	// TokensMessage represents a message containing issued and revoked tokens
 	TokensMessage struct {
-		IssuedRefreshTokensJTIs  []string `json:"issued_refresh_tokens_jtis"`
-		RevokedRefreshTokensJTIs []string `json:"revoked_refresh_tokens_jtis"`
-		IssuedAccessTokensJTIs   []string `json:"issued_access_tokens_jtis"`
-		RevokedAccessTokensJTIs  []string `json:"revoked_access_tokens_jtis"`
+		IssuedTokenPairs         []TokenPair `json:"issued_token_pairs"`
+		RevokedRefreshTokensJTIs []string    `json:"revoked_refresh_tokens_jtis"`
+		RevokedAccessTokensJTIs  []string    `json:"revoked_access_tokens_jtis"`
 	}
 )

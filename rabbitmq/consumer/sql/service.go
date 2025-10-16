@@ -226,31 +226,42 @@ func (d *DefaultService) Start(ctx context.Context) error {
 					}
 
 					// Process the message
-					for _, issuedRefreshTokenJTI := range msg.IssuedRefreshTokensJTIs {
+					for _, issuedTokenPair := range msg.IssuedTokenPairs {
+						// Insert the refresh token JTI
 						if _, err = db.Exec(
 							InsertRefreshTokenQuery,
-							issuedRefreshTokenJTI,
+							issuedTokenPair.RefreshTokenJTI,
 						); err != nil && d.logger != nil {
 							d.logger.Error(
 								"Failed to add refresh token JTI",
-								slog.String("jti", issuedRefreshTokenJTI),
+								slog.String(
+									"jti",
+									issuedTokenPair.RefreshTokenJTI,
+								),
 								slog.String("error", err.Error()),
 							)
 						}
-					}
-					for _, issuedAccessTokenJTI := range msg.IssuedAccessTokensJTIs {
+
+						// Also insert the access token JTI
 						if _, err = db.Exec(
 							InsertAccessTokenQuery,
-							issuedAccessTokenJTI,
+							issuedTokenPair.AccessTokenJTI,
+							issuedTokenPair.RefreshTokenJTI,
 						); err != nil && d.logger != nil {
 							d.logger.Error(
 								"Failed to add access token JTI",
-								slog.String("jti", issuedAccessTokenJTI),
+								slog.String(
+									"jti",
+									issuedTokenPair.AccessTokenJTI,
+								),
 								slog.String("error", err.Error()),
 							)
 						}
 					}
+
+					// Remove the revoked refresh token JTIs
 					for _, revokedRefreshTokensJTI := range msg.RevokedRefreshTokensJTIs {
+						// Remove the refresh token JTI
 						if _, err = db.Exec(
 							DeleteRefreshTokenQuery,
 							revokedRefreshTokensJTI,
@@ -261,14 +272,29 @@ func (d *DefaultService) Start(ctx context.Context) error {
 								slog.String("error", err.Error()),
 							)
 						}
+
+						// Also remove the associated access token JTIs
+						if _, err = db.Exec(
+							DeleteAccessTokenByRefreshTokenQuery,
+							revokedRefreshTokensJTI,
+						); err != nil && d.logger != nil {
+							d.logger.Error(
+								"Failed to remove access tokens by refresh token JTI",
+								slog.String("jti", revokedRefreshTokensJTI),
+								slog.String("error", err.Error()),
+							)
+						}
 					}
+
+					// Remove the revoked access token JTIs
 					for _, revokedAccessTokensJTI := range msg.RevokedAccessTokensJTIs {
+						// Remove the access token JTI
 						if _, err = db.Exec(
 							DeleteAccessTokenQuery,
 							revokedAccessTokensJTI,
 						); err != nil && d.logger != nil {
 							d.logger.Error(
-								"Failed to remove access token JTI",
+								"Failed to revoke access token JTI",
 								slog.String("jti", revokedAccessTokensJTI),
 								slog.String("error", err.Error()),
 							)
