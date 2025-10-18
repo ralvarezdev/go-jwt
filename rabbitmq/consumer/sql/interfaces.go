@@ -18,7 +18,7 @@ type (
 		InsertAccessTokens(tokenPairs ...gojwtrabbitmq.TokenPair) error
 		RevokeRefreshTokens(jtis ...string) error
 		RevokeAccessTokens(jtis ...string) error
-		RevokeAccessTokensByRefreshTokens(jtis []string) error
+		RevokeAccessTokensByRefreshTokens(jtis ...string) error
 		IsRefreshTokenValid(jti string) (bool, error)
 		IsAccessTokenValid(jti string) (bool, error)
 	}
