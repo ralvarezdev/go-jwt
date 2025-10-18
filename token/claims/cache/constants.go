@@ -5,6 +5,9 @@ import (
 )
 
 var (
-	// JwtIdentifierSeparator is the separator of the JWT identifier prefixes
-	JwtIdentifierSeparator = gostringsseparator.Dots
+	// KeySeparator is the separator for the cache keys
+	KeySeparator = gostringsseparator.Dots
+
+	// ParentRefreshTokenIDPrefix is the prefix of the Parent Refresh Token ID key
+	ParentRefreshTokenIDPrefix = "PRT"
 )

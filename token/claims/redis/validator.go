@@ -14,14 +14,14 @@ import (
 )
 
 type (
-	// TokenValidatorService struct
-	TokenValidatorService struct {
+	// TokenValidator struct
+	TokenValidator struct {
 		redisClient *redis.Client
 		logger      *slog.Logger
 	}
 )
 
-// NewTokenValidatorService creates a new token validator service
+// NewTokenValidator creates a new token validator
 //
 // Parameters:
 //
@@ -30,13 +30,13 @@ type (
 //
 // Returns:
 //
-//   - *TokenValidatorService: The token validator service
+//   - *TokenValidator: The token validator
 //   - error: An error if the Redis client is nil
-func NewTokenValidatorService(
+func NewTokenValidator(
 	redisClient *redis.Client,
 	logger *slog.Logger,
 ) (
-	*TokenValidatorService,
+	*TokenValidator,
 	error,
 ) {
 	// Check if the Redis client is nil
@@ -48,7 +48,7 @@ func NewTokenValidatorService(
 		logger = logger.With(slog.String("component", "redis_token_validator"))
 	}
 
-	return &TokenValidatorService{redisClient, logger}, nil
+	return &TokenValidator{redisClient, logger}, nil
 }
 
 // GetKey gets the JWT Identifier key
@@ -62,11 +62,11 @@ func NewTokenValidatorService(
 //
 //   - string: The key for the token
 //   - error: An error if the token abbreviation fails
-func (d *TokenValidatorService) GetKey(
+func (t *TokenValidator) GetKey(
 	token gojwttoken.Token,
 	id string,
 ) (string, error) {
-	if d == nil {
+	if t == nil {
 		return "", gojwttokenclaims.ErrNilTokenValidator
 	}
 
@@ -77,10 +77,33 @@ func (d *TokenValidatorService) GetKey(
 	}
 
 	return gostringsadd.Prefixes(
-		id,
-		JwtIdentifierSeparator,
-		JwtIdentifierPrefix,
 		tokenPrefix,
+		KeySeparator,
+		id,
+	), nil
+}
+
+// GetParentRefreshTokenKey gets the parent refresh token key
+//
+// Parameters:
+//
+//   - id: The ID associated with the token
+//
+// Returns:
+//
+//   - string: The key for the parent refresh token
+//   - error: An error if the token validator is nil
+func (t *TokenValidator) GetParentRefreshTokenKey(
+	id string,
+) (string, error) {
+	if t == nil {
+		return "", gojwttokenclaims.ErrNilTokenValidator
+	}
+
+	return gostringsadd.Prefixes(
+		ParentRefreshTokenIDPrefix,
+		KeySeparator,
+		id,
 	), nil
 }
 
@@ -95,66 +118,108 @@ func (d *TokenValidatorService) GetKey(
 // Returns:
 //
 //   - error: An error if setting the token fails
-func (d *TokenValidatorService) setWithFormattedKey(
+func (t *TokenValidator) setWithFormattedKey(
 	key string,
 	isValid bool,
 	expiresAt time.Time,
 ) error {
-	if d == nil {
+	if t == nil {
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Set the initial value
-	if err := d.redisClient.Set(
+	if err := t.redisClient.Set(
 		context.Background(),
 		key,
 		isValid,
 		0,
 	).Err(); err != nil {
-		gojwttokenclaims.SetTokenFailed(err, d.logger)
+		gojwttokenclaims.SetTokenFailed(err, t.logger)
 		return err
 	}
 
 	// Set expiration time for the key as a UNIX timestamp
-	err := d.redisClient.ExpireAt(context.Background(), key, expiresAt).Err()
+	err := t.redisClient.ExpireAt(context.Background(), key, expiresAt).Err()
 	if err != nil {
-		gojwttokenclaims.SetTokenFailed(err, d.logger)
+		gojwttokenclaims.SetTokenFailed(err, t.logger)
 	}
 	return err
 }
 
-// Set sets the token with the value and expiration
+// AddRefreshToken adds a refresh token
 //
 // Parameters:
 //
-//   - token: The token
 //   - id: The ID associated with the token
-//   - isValid: The value to set (true if valid, false if revoked)
 //   - expiresAt: The expiration time of the token
 //
 // Returns:
 //
-//   - error: An error if the token validator service is nil or if setting the token fails
-func (d *TokenValidatorService) Set(
-	token gojwttoken.Token,
+//   - error: An error if the token validator is nil or if adding the refresh token fails
+func (t *TokenValidator) AddRefreshToken(
 	id string,
-	isValid bool,
 	expiresAt time.Time,
 ) error {
-	if d == nil {
+	if t == nil {
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the key
-	key, err := d.GetKey(token, id)
+	key, err := t.GetKey(gojwttoken.RefreshToken, id)
 	if err != nil {
 		return err
 	}
 
-	return d.setWithFormattedKey(key, isValid, expiresAt)
+	return t.setWithFormattedKey(key, true, expiresAt)
 }
 
-// Revoke revokes the token
+// AddAccessToken adds an access token
+//
+// Parameters:
+//
+//   - id: The ID associated with the token
+//   - parentRefreshTokenID: The parent refresh token ID
+//   - expiresAt: The expiration time of the token
+//
+// Returns:
+//
+//   - error: An error if the token validator is nil or if adding the access token fails
+func (t *TokenValidator) AddAccessToken(
+	id string,
+	parentRefreshTokenID string,
+	expiresAt time.Time,
+) error {
+	if t == nil {
+		return gojwttokenclaims.ErrNilTokenValidator
+	}
+
+	// Get the key
+	key, err := t.GetKey(gojwttoken.AccessToken, id)
+	if err != nil {
+		return err
+	}
+
+	// Set the parent refresh token ID key
+	parentRefreshTokenKey, err := t.GetParentRefreshTokenKey(id)
+	if err != nil {
+		return err
+	}
+
+	// Set the parent refresh token ID with its access token ID
+	if err := t.redisClient.Set(
+		context.Background(),
+		parentRefreshTokenKey,
+		id,
+		expiresAt.Sub(time.Now()),
+	).Err(); err != nil {
+		gojwttokenclaims.SetTokenFailed(err, t.logger)
+		return err
+	}
+
+	return t.setWithFormattedKey(key, true, expiresAt)
+}
+
+// RevokeToken revokes the token
 //
 // Parameters:
 //
@@ -163,32 +228,85 @@ func (d *TokenValidatorService) Set(
 //
 // Returns:
 //
-//   - error: An error if the token validator service is nil or if revoking the token fails
-func (d *TokenValidatorService) Revoke(
+//   - error: An error if the token validator is nil or if revoking the token fails
+func (t *TokenValidator) RevokeToken(
 	token gojwttoken.Token,
 	id string,
 ) error {
-	if d == nil {
+	if t == nil {
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the key
-	key, err := d.GetKey(token, id)
+	key, err := t.GetKey(token, id)
 	if err != nil {
 		return err
 	}
 
 	// Get the current TTL of the key
-	ttl, err := d.redisClient.TTL(context.Background(), key).Result()
+	ttl, err := t.redisClient.TTL(context.Background(), key).Result()
 	if err != nil {
 		return err
 	}
 
 	// Update the value maintaining the TTL
-	return d.setWithFormattedKey(key, false, time.Now().Add(ttl))
+	if err = t.setWithFormattedKey(
+		key,
+		false,
+		time.Now().Add(ttl),
+	); err != nil {
+		gojwttokenclaims.RevokeTokenFailed(err, t.logger)
+		return err
+	}
+
+	// Check if the token is a refresh token to revoke its associated access token
+	if token != gojwttoken.RefreshToken {
+		return nil
+	}
+
+	// Get the parent refresh token key
+	parentRefreshTokenKey, err := t.GetParentRefreshTokenKey(id)
+	if err != nil {
+		return err
+	}
+
+	// Get the associated access token ID
+	accessTokenID, err := t.redisClient.Get(
+		context.Background(),
+		parentRefreshTokenKey,
+	).Result()
+	if err != nil {
+		return err
+	}
+
+	// Revoke the associated access token
+	accessTokenKey, err := t.GetKey(gojwttoken.AccessToken, accessTokenID)
+	if err != nil {
+		return err
+	}
+
+	// Get the current TTL of the access token key
+	accessTokenTTL, err := t.redisClient.TTL(
+		context.Background(),
+		accessTokenKey,
+	).Result()
+	if err != nil {
+		return err
+	}
+
+	// Update the value maintaining the TTL
+	if err = t.setWithFormattedKey(
+		accessTokenKey,
+		false,
+		time.Now().Add(accessTokenTTL),
+	); err != nil {
+		gojwttokenclaims.RevokeTokenFailed(err, t.logger)
+		return err
+	}
+	return nil
 }
 
-// IsValid checks if the token is valid
+// IsTokenValid checks if the token is valid
 //
 // Parameters:
 //
@@ -198,24 +316,24 @@ func (d *TokenValidatorService) Revoke(
 // Returns:
 //
 //   - bool: True if the token is valid, false if revoked
-//   - error: An error if the token validator service is nil or if checking the token fails
-func (d *TokenValidatorService) IsValid(
+//   - error: An error if the token validator is nil or if checking the token fails
+func (t *TokenValidator) IsTokenValid(
 	token gojwttoken.Token,
 	id string,
 ) (bool, error) {
 	// Get the key
-	key, err := d.GetKey(token, id)
+	key, err := t.GetKey(token, id)
 	if err != nil {
 		return false, err
 	}
 
 	// Get the value
-	isValid, err := d.redisClient.Get(
+	isValid, err := t.redisClient.Get(
 		context.Background(),
 		key,
 	).Result()
 	if err != nil {
-		gojwttokenclaims.GetTokenFailed(err, d.logger)
+		gojwttokenclaims.GetTokenFailed(err, t.logger)
 		return false, err
 	}
 

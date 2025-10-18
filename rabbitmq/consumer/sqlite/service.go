@@ -1,4 +1,4 @@
-package sql
+package sqlite
 
 import (
 	"context"
@@ -65,99 +65,6 @@ func NewDefaultService(
 		consumer: consumer,
 		logger:   logger,
 	}, nil
-}
-
-// Connect opens the database connection
-//
-// Returns:
-//
-//   - *sql.DB: the database connection
-//   - error: an error if the connection could not be opened
-func (d *DefaultService) Connect() (*sql.DB, error) {
-	// Check if the service is nil
-	if d == nil {
-		return nil, godatabases.ErrNilService
-	}
-
-	// Lock the mutex to ensure thread safety
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	// Connect to the database
-	db, err := d.Handler.Connect()
-	if err != nil {
-		if d.logger != nil {
-			d.logger.Error(
-				"Failed to connect to database",
-				slog.String("error", err.Error()),
-			)
-		}
-		return nil, err
-	}
-
-	// Ensure the tables exist
-	if _, err = db.Exec(CreateRefreshTokensTableQuery); err != nil {
-		return nil, err
-	}
-	if _, err = db.Exec(CreateAccessTokensTableQuery); err != nil {
-		return nil, err
-	}
-	return db, nil
-}
-
-// Disconnect closes the database connection
-//
-// Returns:
-//
-//   - error: an error if the connection could not be closed
-func (d *DefaultService) Disconnect() error {
-	// Check if the service is nil
-	if d == nil {
-		return godatabases.ErrNilService
-	}
-
-	// Lock the mutex to ensure thread safety
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	// Disconnect from the database
-	if err := d.Handler.Disconnect(); err != nil {
-		if d.logger != nil {
-			d.logger.Error(
-				"Failed to disconnect from database",
-				slog.String("error", err.Error()),
-			)
-		}
-		return err
-	}
-
-	return nil
-}
-
-// DB is a helper function to get the database connection
-//
-// Returns:
-//
-//   - *sql.DB: the database connection
-func (d *DefaultService) DB() (*sql.DB, error) {
-	// Lock the mutex to ensure thread safety
-	d.mutex.Lock()
-
-	// Get the database connection
-	db, err := d.DB()
-	if err != nil {
-		d.mutex.Unlock()
-		if d.logger != nil {
-			d.logger.Error(
-				"Failed to get database connection",
-				slog.String("error", err.Error()),
-			)
-		}
-		return nil, err
-	}
-	d.mutex.Unlock()
-
-	return db, nil
 }
 
 // Start starts the service to listen for messages and update the SQL database
@@ -603,3 +510,14 @@ func (d *DefaultService) ValidateClaims(
 		return false, nil
 	}
 }
+
+/*
+Set(
+			token gojwttoken.Token,
+			id string,
+			isValid bool,
+			expiresAt time.Time,
+		) error
+		Revoke(token gojwttoken.Token, id string) error
+		IsValid(token gojwttoken.Token, id string) (bool, error)
+*/

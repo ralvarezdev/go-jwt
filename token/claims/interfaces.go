@@ -18,13 +18,16 @@ type (
 
 	// TokenValidator interface
 	TokenValidator interface {
-		Set(
-			token gojwttoken.Token,
+		AddRefreshToken(
 			id string,
-			isValid bool,
 			expiresAt time.Time,
 		) error
-		Revoke(token gojwttoken.Token, id string) error
-		IsValid(token gojwttoken.Token, id string) (bool, error)
+		AddAccessToken(
+			id string,
+			parentRefreshTokenID string,
+			expiresAt time.Time,
+		) error
+		RevokeToken(token gojwttoken.Token, id string) error
+		IsTokenValid(token gojwttoken.Token, id string) (bool, error)
 	}
 )

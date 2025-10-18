@@ -1,4 +1,4 @@
-package sql
+package sqlite
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 type (
 	// Service is the interface for the SQLite service for JWT IDs
 	Service interface {
-		gojwtclaims.Validator
+		gojwtclaims.ClaimsValidator
 		godatabasessql.Handler
 		Start(ctx context.Context) error
 		InsertRefreshTokens(jtis ...string) error

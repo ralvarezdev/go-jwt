@@ -3,7 +3,6 @@ package claims
 import (
 	"github.com/golang-jwt/jwt/v5"
 	gojwt "github.com/ralvarezdev/go-jwt"
-	gojwtcache "github.com/ralvarezdev/go-jwt/cache"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 )
 
@@ -29,7 +28,7 @@ func NewDefaultClaimsValidator(
 ) (*DefaultClaimsValidator, error) {
 	// Check if the token validator is nil
 	if tokenValidator == nil {
-		return nil, gojwtcache.ErrNilTokenValidator
+		return nil, ErrNilTokenValidator
 	}
 
 	return &DefaultClaimsValidator{
