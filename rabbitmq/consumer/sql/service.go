@@ -69,11 +69,12 @@ func NewDefaultService(
 //
 // Returns:
 //
+//   - *sql.DB: the database connection
 //   - error: an error if the connection could not be opened
-func (d *DefaultService) Connect() error {
+func (d *DefaultService) Connect() (*sql.DB, error) {
 	// Check if the service is nil
 	if d == nil {
-		return godatabases.ErrNilService
+		return nil, godatabases.ErrNilService
 	}
 
 	// Lock the mutex to ensure thread safety
@@ -89,17 +90,17 @@ func (d *DefaultService) Connect() error {
 				slog.String("error", err.Error()),
 			)
 		}
-		return err
+		return nil, err
 	}
 
 	// Ensure the tables exist
 	if _, err = db.Exec(CreateRefreshTokensTableQuery); err != nil {
-		return err
+		return nil, err
 	}
 	if _, err = db.Exec(CreateAccessTokensTableQuery); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return db, nil
 }
 
 // Disconnect closes the database connection
