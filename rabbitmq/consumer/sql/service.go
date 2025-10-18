@@ -175,12 +175,6 @@ func (d *DefaultService) Start(ctx context.Context) error {
 		return sql.ErrConnDone
 	}
 
-	// Get the database connection
-	db, err := d.DB()
-	if err != nil {
-		return err
-	}
-
 	// Start the consumer
 	tokensMessagesConsumer, err := d.consumer.CreateTokensMessagesConsumer(ctx)
 	if err != nil {
@@ -230,77 +224,29 @@ func (d *DefaultService) Start(ctx context.Context) error {
 					// Process the message
 					for _, issuedTokenPair := range msg.IssuedTokenPairs {
 						// Insert the refresh token JTI
-						if _, err = db.Exec(
-							InsertRefreshTokenQuery,
-							issuedTokenPair.RefreshTokenJTI,
-						); err != nil && d.logger != nil {
-							d.logger.Error(
-								"Failed to add refresh token JTI",
-								slog.String(
-									"jti",
-									issuedTokenPair.RefreshTokenJTI,
-								),
-								slog.String("error", err.Error()),
-							)
+						if err = d.InsertRefreshTokens(issuedTokenPair.RefreshTokenJTI); err != nil {
+							return err
 						}
 
 						// Also insert the access token JTI
-						if _, err = db.Exec(
-							InsertAccessTokenQuery,
-							issuedTokenPair.AccessTokenJTI,
-							issuedTokenPair.RefreshTokenJTI,
-						); err != nil && d.logger != nil {
-							d.logger.Error(
-								"Failed to add access token JTI",
-								slog.String(
-									"jti",
-									issuedTokenPair.AccessTokenJTI,
-								),
-								slog.String("error", err.Error()),
-							)
+						if err = d.InsertAccessTokens(issuedTokenPair); err != nil {
+							return err
 						}
 					}
 
 					// Remove the revoked refresh token JTIs
-					for _, revokedRefreshTokensJTI := range msg.RevokedRefreshTokensJTIs {
-						// Remove the refresh token JTI
-						if _, err = db.Exec(
-							DeleteRefreshTokenQuery,
-							revokedRefreshTokensJTI,
-						); err != nil && d.logger != nil {
-							d.logger.Error(
-								"Failed to remove refresh token JTI",
-								slog.String("jti", revokedRefreshTokensJTI),
-								slog.String("error", err.Error()),
-							)
-						}
+					if err = d.RevokeRefreshTokens(msg.RevokedRefreshTokensJTIs...); err != nil {
+						return err
+					}
 
-						// Also remove the associated access token JTIs
-						if _, err = db.Exec(
-							DeleteAccessTokenByRefreshTokenQuery,
-							revokedRefreshTokensJTI,
-						); err != nil && d.logger != nil {
-							d.logger.Error(
-								"Failed to remove access tokens by refresh token JTI",
-								slog.String("jti", revokedRefreshTokensJTI),
-								slog.String("error", err.Error()),
-							)
-						}
+					// Remove the revoked refresh token JTIs
+					if err = d.RevokeAccessTokensByRefreshTokens(msg.RevokedRefreshTokensJTIs...); err != nil {
+						return err
 					}
 
 					// Remove the revoked access token JTIs
-					for _, revokedAccessTokensJTI := range msg.RevokedAccessTokensJTIs {
-						// Remove the access token JTI
-						if _, err = db.Exec(
-							DeleteAccessTokenQuery,
-							revokedAccessTokensJTI,
-						); err != nil && d.logger != nil {
-							d.logger.Error(
-								"Failed to revoke access token JTI",
-								slog.String("jti", revokedAccessTokensJTI),
-								slog.String("error", err.Error()),
-							)
-						}
+					if err = d.RevokeAccessTokens(msg.RevokedAccessTokensJTIs...); err != nil {
+						return err
 					}
 				}
 			}
@@ -316,6 +262,192 @@ func (d *DefaultService) Start(ctx context.Context) error {
 		)
 	}
 	return err
+}
+
+// InsertRefreshTokens inserts multiple refresh token JTIs into the database
+//
+// Parameters:
+//
+//   - jtis: the slice of refresh token JTIs to insert
+//
+// Returns:
+//
+//   - error: an error if the insertion could not be performed
+func (d *DefaultService) InsertRefreshTokens(jtis ...string) error {
+	// Check if the service is nil
+	if d == nil {
+		return sql.ErrConnDone
+	}
+
+	// Get the database connection
+	db, err := d.DB()
+	if err != nil {
+		return err
+	}
+
+	// Insert each refresh token JTI
+	for _, jti := range jtis {
+		if _, err = db.Exec(
+			InsertRefreshTokenQuery,
+			jti,
+		); err != nil && d.logger != nil {
+			d.logger.Error(
+				"Failed to insert refresh token JTI",
+				slog.String("jti", jti),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+	return nil
+}
+
+// InsertAccessTokens inserts multiple access token JTIs into the database
+//
+// Parameters:
+//
+//   - tokenPairs: the slice of access token JTI pairs to insert
+//
+// Returns:
+//
+//   - error: an error if the insertion could not be performed
+func (d *DefaultService) InsertAccessTokens(tokenPairs ...gojwtrabbitmq.TokenPair) error {
+	// Check if the service is nil
+	if d == nil {
+		return sql.ErrConnDone
+	}
+
+	// Get the database connection
+	db, err := d.DB()
+	if err != nil {
+		return err
+	}
+
+	// Insert each access token JTI
+	for _, tokenPair := range tokenPairs {
+		if _, err = db.Exec(
+			InsertAccessTokenQuery,
+			tokenPair.AccessTokenJTI,
+			tokenPair.RefreshTokenJTI,
+		); err != nil && d.logger != nil {
+			d.logger.Error(
+				"Failed to insert access token JTI",
+				slog.String("jti", tokenPair.AccessTokenJTI),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+	return nil
+}
+
+// RevokeRefreshTokens revokes multiple refresh token JTIs from the database
+//
+// Parameters:
+//
+//   - jtis: the slice of refresh token JTIs to revoke
+//
+// Returns:
+//
+//   - error: an error if the revocation could not be performed
+func (d *DefaultService) RevokeRefreshTokens(jtis ...string) error {
+	// Check if the service is nil
+	if d == nil {
+		return sql.ErrConnDone
+	}
+
+	// Get the database connection
+	db, err := d.DB()
+	if err != nil {
+		return err
+	}
+
+	// Revoke each refresh token JTI
+	for _, jti := range jtis {
+		if _, err = db.Exec(
+			DeleteRefreshTokenQuery,
+			jti,
+		); err != nil && d.logger != nil {
+			d.logger.Error(
+				"Failed to revoke refresh token JTI",
+				slog.String("jti", jti),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+	return nil
+}
+
+// RevokeAccessTokens revokes multiple access token JTIs from the database
+//
+// Parameters:
+//
+//   - jtis: the slice of access token JTIs to revoke
+//
+// Returns:
+//
+//   - error: an error if the revocation could not be performed
+func (d *DefaultService) RevokeAccessTokens(jtis ...string) error {
+	// Check if the service is nil
+	if d == nil {
+		return sql.ErrConnDone
+	}
+
+	// Get the database connection
+	db, err := d.DB()
+	if err != nil {
+		return err
+	}
+
+	// Revoke each access token JTI
+	for _, jti := range jtis {
+		if _, err = db.Exec(
+			DeleteAccessTokenQuery,
+			jti,
+		); err != nil && d.logger != nil {
+			d.logger.Error(
+				"Failed to revoke access token JTI",
+				slog.String("jti", jti),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+	return nil
+}
+
+// RevokeAccessTokensByRefreshTokens revokes access token JTIs associated with the given refresh tokens JTIs
+//
+// Parameters:
+//
+//   - jtis: the slice of refresh token JTIs whose associated access tokens are to be revoked
+//
+// Returns:
+//
+//   - error: an error if the revocation could not be performed
+func (d *DefaultService) RevokeAccessTokensByRefreshTokens(jtis ...string) error {
+	// Check if the service is nil
+	if d == nil {
+		return sql.ErrConnDone
+	}
+
+	// Get the database connection
+	db, err := d.DB()
+	if err != nil {
+		return err
+	}
+
+	// Revoke access tokens for each refresh token JTI
+	for _, jti := range jtis {
+		if _, err = db.Exec(
+			DeleteAccessTokenByRefreshTokenQuery,
+			jti,
+		); err != nil && d.logger != nil {
+			d.logger.Error(
+				"Failed to revoke access tokens by refresh token JTI",
+				slog.String("jti", jti),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+	return nil
 }
 
 // IsRefreshTokenValid checks if the given refresh token JTI exists in the database
