@@ -1,18 +1,22 @@
 package rabbitmq
 
+import (
+	"time"
+)
+
 type (
 	// TokenPair represents a pair of refresh and access token JTIs
 	TokenPair struct {
-		RefreshTokenJTI string `json:"refresh_token_jti"`
-		RefreshTokenExp int64  `json:"refresh_token_exp"`
-		AccessTokenJTI  string `json:"access_token_jti"`
-		AccessTokenExp  int64  `json:"access_token_exp"`
+		RefreshTokenID        string    `json:"refresh_token_id"`
+		RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
+		AccessTokenID         string    `json:"access_token_id"`
+		AccessTokenExpiresAt  time.Time `json:"access_token_expires_at"`
 	}
 
 	// TokensMessage represents a message containing issued and revoked tokens
 	TokensMessage struct {
-		IssuedTokenPairs         []TokenPair `json:"issued_token_pairs"`
-		RevokedRefreshTokensJTIs []string    `json:"revoked_refresh_tokens_jtis"`
-		RevokedAccessTokensJTIs  []string    `json:"revoked_access_tokens_jtis"`
+		IssuedTokenPairs       []TokenPair `json:"issued_token_pairs"`
+		RevokedRefreshTokensID []string    `json:"revoked_refresh_tokens_id"`
+		RevokedAccessTokensID  []string    `json:"revoked_access_tokens_id"`
 	}
 )

@@ -69,7 +69,7 @@ func (d DefaultClaimsValidator) ValidateClaims(
 	}
 
 	// Check if the token is valid
-	isValid, err := d.tokenValidator.IsValid(token, jtiStr)
+	isValid, err := d.tokenValidator.IsTokenValid(token, jtiStr)
 	if err != nil {
 		return false, err
 	}

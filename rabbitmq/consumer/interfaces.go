@@ -4,6 +4,7 @@ import (
 	"context"
 
 	gojwtrabbitmq "github.com/ralvarezdev/go-jwt/rabbitmq"
+	gojwttokenclaims "github.com/ralvarezdev/go-jwt/token/claims"
 )
 
 type (
@@ -21,5 +22,11 @@ type (
 			TokensMessagesConsumer,
 			error,
 		)
+	}
+
+	// Service is the interface for the SQLite service for JWT IDs
+	Service interface {
+		gojwttokenclaims.TokenValidator
+		Start(ctx context.Context) error
 	}
 )
