@@ -12,7 +12,7 @@ type (
 	Service interface {
 		gojwtclaims.Validator
 		godatabasessql.Handler
-		Start(ctx context.Context)
+		Start(ctx context.Context) error
 		IsRefreshTokenValid(jti string) (bool, error)
 		IsAccessTokenValid(jti string) (bool, error)
 	}
