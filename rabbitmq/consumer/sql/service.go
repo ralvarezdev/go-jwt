@@ -7,11 +7,13 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/golang-jwt/jwt/v5"
 	godatabases "github.com/ralvarezdev/go-databases"
 	godatabasessql "github.com/ralvarezdev/go-databases/sql"
 	gojwtrabbitmq "github.com/ralvarezdev/go-jwt/rabbitmq"
 	gojwtrabbitmqconsumer "github.com/ralvarezdev/go-jwt/rabbitmq/consumer"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
+	gojwttokenvalidator "github.com/ralvarezdev/go-jwt/token/validator"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -410,7 +412,7 @@ func (d *DefaultService) IsAccessTokenValid(jti string) (bool, error) {
 //   - bool: true if the claims are valid, false otherwise
 //   - error: an error if the validation could not be performed
 func (d *DefaultService) ValidateClaims(
-	claims map[string]interface{},
+	claims jwt.MapClaims,
 	token gojwttoken.Token,
 ) (bool, error) {
 	// Check if the service is nil
@@ -418,8 +420,31 @@ func (d *DefaultService) ValidateClaims(
 		return false, sql.ErrConnDone
 	}
 
+	// Check if the claims are nil
+	if claims == nil {
+		if d.logger != nil {
+			d.logger.Error(
+				"Claims are nil",
+				slog.String("token", token.String()),
+			)
+		}
+		return false, gojwttokenvalidator.ErrNilClaims
+	}
+
+	// Check if the claims contain the JTI
+	jti, ok := claims["jti"]
+	if !ok {
+		if d.logger != nil {
+			d.logger.Error(
+				"JTI claim is missing",
+				slog.String("token", token.String()),
+			)
+		}
+		return false, ErrMissingJTI
+	}
+
 	// Extract the JTI from the claims
-	jti, ok := claims["jti"].(string)
+	jtiStr, ok := jti.(string)
 	if !ok || jti == "" {
 		if d.logger != nil {
 			d.logger.Error(
@@ -433,9 +458,9 @@ func (d *DefaultService) ValidateClaims(
 	// Validate the JTI based on the token type
 	switch token {
 	case gojwttoken.AccessToken:
-		return d.IsAccessTokenValid(jti)
+		return d.IsAccessTokenValid(jtiStr)
 	case gojwttoken.RefreshToken:
-		return d.IsRefreshTokenValid(jti)
+		return d.IsRefreshTokenValid(jtiStr)
 	default:
 		if d.logger != nil {
 			d.logger.Error(
