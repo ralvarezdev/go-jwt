@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	godatabases "github.com/ralvarezdev/go-databases"
-	gojwtcache "github.com/ralvarezdev/go-jwt/cache"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
+	gojwttokenclaims "github.com/ralvarezdev/go-jwt/token/claims"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
 )
 
@@ -60,14 +60,14 @@ func NewTokenValidatorService(
 //
 // Returns:
 //
-//   - string: The key for the cache
+//   - string: The key for the token
 //   - error: An error if the token abbreviation fails
 func (d *TokenValidatorService) GetKey(
 	token gojwttoken.Token,
 	id string,
 ) (string, error) {
 	if d == nil {
-		return "", gojwtcache.ErrNilTokenValidator
+		return "", gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the token string
@@ -88,20 +88,20 @@ func (d *TokenValidatorService) GetKey(
 //
 // Parameters:
 //
-//   - key: The key for the cache
+//   - key: The key for the token
 //   - isValid: The value to set (true if valid, false if revoked)
 //   - expiresAt: The expiration time of the token
 //
 // Returns:
 //
-//   - error: An error if setting the token in the cache fails
+//   - error: An error if setting the token fails
 func (d *TokenValidatorService) setWithFormattedKey(
 	key string,
 	isValid bool,
 	expiresAt time.Time,
 ) error {
 	if d == nil {
-		return gojwtcache.ErrNilTokenValidator
+		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Set the initial value
@@ -111,14 +111,14 @@ func (d *TokenValidatorService) setWithFormattedKey(
 		isValid,
 		0,
 	).Err(); err != nil {
-		gojwtcache.SetTokenToCacheFailed(err, d.logger)
+		gojwttokenclaims.SetTokenFailed(err, d.logger)
 		return err
 	}
 
 	// Set expiration time for the key as a UNIX timestamp
 	err := d.redisClient.ExpireAt(context.Background(), key, expiresAt).Err()
 	if err != nil {
-		gojwtcache.SetTokenToCacheFailed(err, d.logger)
+		gojwttokenclaims.SetTokenFailed(err, d.logger)
 	}
 	return err
 }
@@ -134,7 +134,7 @@ func (d *TokenValidatorService) setWithFormattedKey(
 //
 // Returns:
 //
-//   - error: An error if the token validator service is nil or if setting the token in the cache fails
+//   - error: An error if the token validator service is nil or if setting the token fails
 func (d *TokenValidatorService) Set(
 	token gojwttoken.Token,
 	id string,
@@ -142,7 +142,7 @@ func (d *TokenValidatorService) Set(
 	expiresAt time.Time,
 ) error {
 	if d == nil {
-		return gojwtcache.ErrNilTokenValidator
+		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the key
@@ -163,13 +163,13 @@ func (d *TokenValidatorService) Set(
 //
 // Returns:
 //
-//   - error: An error if the token validator service is nil or if revoking the token in the cache fails
+//   - error: An error if the token validator service is nil or if revoking the token fails
 func (d *TokenValidatorService) Revoke(
 	token gojwttoken.Token,
 	id string,
 ) error {
 	if d == nil {
-		return gojwtcache.ErrNilTokenValidator
+		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the key
@@ -198,7 +198,7 @@ func (d *TokenValidatorService) Revoke(
 // Returns:
 //
 //   - bool: True if the token is valid, false if revoked
-//   - error: An error if the token validator service is nil or if checking the token in the cache fails
+//   - error: An error if the token validator service is nil or if checking the token fails
 func (d *TokenValidatorService) IsValid(
 	token gojwttoken.Token,
 	id string,
@@ -215,7 +215,7 @@ func (d *TokenValidatorService) IsValid(
 		key,
 	).Result()
 	if err != nil {
-		gojwtcache.GetTokenFromCacheFailed(err, d.logger)
+		gojwttokenclaims.GetTokenFailed(err, d.logger)
 		return false, err
 	}
 

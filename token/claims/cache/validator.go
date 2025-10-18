@@ -7,6 +7,7 @@ import (
 	gocache "github.com/ralvarezdev/go-cache"
 	gocachetimed "github.com/ralvarezdev/go-cache/timed"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
+	gojwttokenclaims "github.com/ralvarezdev/go-jwt/token/claims"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
 )
 
@@ -29,7 +30,12 @@ type (
 //   - *TokenValidatorService: The token validator service
 func NewTokenValidatorService(logger *slog.Logger) *TokenValidatorService {
 	if logger != nil {
-		logger = logger.With(slog.String("component", "cache_token_validator"))
+		logger = logger.With(
+			slog.String(
+				"component",
+				"token_validator_service",
+			),
+		)
 	}
 	return &TokenValidatorService{
 		cache:  gocachetimed.NewCache(),
@@ -53,7 +59,7 @@ func (t *TokenValidatorService) GetKey(
 	id string,
 ) (string, error) {
 	if t == nil {
-		return "", ErrNilTokenValidator
+		return "", gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the token string
@@ -84,7 +90,7 @@ func (t *TokenValidatorService) Set(
 	expiresAt time.Time,
 ) error {
 	if t == nil {
-		return ErrNilTokenValidator
+		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the key
@@ -96,7 +102,7 @@ func (t *TokenValidatorService) Set(
 	// Set the token in the cache
 	err = t.cache.Set(key, gocachetimed.NewItem(isValid, expiresAt))
 	if err != nil {
-		SetTokenToCacheFailed(err, t.logger)
+		gojwttokenclaims.SetTokenFailed(err, t.logger)
 	}
 	return err
 }
@@ -116,7 +122,7 @@ func (t *TokenValidatorService) Revoke(
 	id string,
 ) error {
 	if t == nil {
-		return ErrNilTokenValidator
+		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the key
@@ -128,7 +134,7 @@ func (t *TokenValidatorService) Revoke(
 	// Revoke the token in the cache
 	err = t.cache.UpdateValue(key, false)
 	if err != nil {
-		RevokeTokenFromCacheFailed(err, t.logger)
+		gojwttokenclaims.RevokeTokenFailed(err, t.logger)
 	}
 	return err
 }
@@ -149,7 +155,7 @@ func (t *TokenValidatorService) IsValid(
 	id string,
 ) (bool, error) {
 	if t == nil {
-		return false, ErrNilTokenValidator
+		return false, gojwttokenclaims.ErrNilTokenValidator
 	}
 
 	// Get the key

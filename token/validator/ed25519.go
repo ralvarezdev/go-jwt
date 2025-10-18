@@ -15,7 +15,7 @@ type (
 	// Ed25519Validator handles parsing and validation of JWT tokens with ED25519 public key
 	Ed25519Validator struct {
 		publicKey       ed25519.PublicKey
-		claimsValidator gojwtclaims.Validator
+		claimsValidator gojwtclaims.ClaimsValidator
 		mode            *goflagmode.Flag
 	}
 )
@@ -34,7 +34,7 @@ type (
 //   - error: An error if the public key cannot be parsed or if any parameter is nil
 func NewEd25519Validator(
 	publicKey []byte,
-	claimsValidator gojwtclaims.Validator,
+	claimsValidator gojwtclaims.ClaimsValidator,
 	mode *goflagmode.Flag,
 ) (*Ed25519Validator, error) {
 	// Check if either the token validator or the mode flag is nil
