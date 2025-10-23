@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
-	"sync"
 	"time"
 
 	godatabases "github.com/ralvarezdev/go-databases"
@@ -14,9 +13,8 @@ import (
 type (
 	// DefaultService is the default implementation of the Service interface
 	DefaultService struct {
-		godatabasessql.Handler
+		godatabasessql.Service
 		logger *slog.Logger
-		mutex  sync.Mutex
 	}
 )
 
@@ -24,7 +22,7 @@ type (
 //
 // Parameters:
 //
-//   - handler: the SQL connection handler
+//   - service: the SQL connection service
 //   - logger: the logger (optional, can be nil)
 //
 // Returns:
@@ -32,43 +30,43 @@ type (
 //   - *DefaultService: the DefaultService instance
 //   - error: an error if the data source or driver name is empty
 func NewDefaultService(
-	handler godatabasessql.Handler,
+	service godatabasessql.Service,
 	logger *slog.Logger,
 ) (*DefaultService, error) {
-	// Check if the handler is nil
-	if handler == nil {
-		return nil, godatabases.ErrNilHandler
+	// Check if the service is nil
+	if service == nil {
+		return nil, godatabases.ErrNilService
 	}
 
 	if logger != nil {
 		logger = logger.With(
-			slog.String("component", "sync_sql_service"),
+			slog.String("component", "sync_sqlite_service"),
 		)
 	}
 
 	return &DefaultService{
-		Handler: handler,
+		Service: service,
 		logger:  logger,
 	}, nil
 }
 
 // Connect opens the database connection
 //
+// Parameters:
+//
+//   - ctx: the context
+//
 // Returns:
 //
 //   - error: an error if the connection could not be opened
-func (d *DefaultService) Connect() error {
+func (d *DefaultService) Connect(ctx context.Context) error {
 	// Check if the service is nil
 	if d == nil {
 		return godatabases.ErrNilService
 	}
 
-	// Lock the mutex to ensure thread safety
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
 	// Connect to the database
-	db, err := d.Handler.Connect()
+	db, err := d.Service.Connect()
 	if err != nil {
 		if d.logger != nil {
 			d.logger.Error(
@@ -80,66 +78,11 @@ func (d *DefaultService) Connect() error {
 	}
 
 	// Ensure the tables exist
-	if _, err = db.Exec(CreateSyncTokensTableQuery); err != nil {
+	if _, err = db.ExecContext(ctx, CreateSyncTokensTableQuery); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-// Disconnect closes the database connection
-//
-// Returns:
-//
-//   - error: an error if the connection could not be closed
-func (d *DefaultService) Disconnect() error {
-	// Check if the service is nil
-	if d == nil {
-		return godatabases.ErrNilService
-	}
-
-	// Lock the mutex to ensure thread safety
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	// Disconnect from the database
-	if err := d.Handler.Disconnect(); err != nil {
-		if d.logger != nil {
-			d.logger.Error(
-				"Failed to disconnect from database",
-				slog.String("error", err.Error()),
-			)
-		}
-		return err
-	}
-
-	return nil
-}
-
-// DB is a helper function to get the database connection
-//
-// Returns:
-//
-//   - *sql.DB: the database connection
-func (d *DefaultService) DB() (*sql.DB, error) {
-	// Lock the mutex to ensure thread safety
-	d.mutex.Lock()
-
-	// Get the database connection
-	db, err := d.DB()
-	if err != nil {
-		d.mutex.Unlock()
-		if d.logger != nil {
-			d.logger.Error(
-				"Failed to get database connection",
-				slog.String("error", err.Error()),
-			)
-		}
-		return nil, err
-	}
-	d.mutex.Unlock()
-
-	return db, nil
 }
 
 // UpdateLastSyncTokensUpdateAt updates the last sync tokens updated at timestamp
@@ -161,19 +104,12 @@ func (d *DefaultService) UpdateLastSyncTokensUpdateAt(
 		return godatabases.ErrNilService
 	}
 
-	// Get the database connection
-	db, err := d.DB()
-	if err != nil {
-		return err
-	}
-
 	// Update the last sync tokens updated at timestamp
-	_, err = db.QueryContext(
+	if _, err := d.ExecWithCtx(
 		ctx,
-		UpdateLastSyncTokensUpdatedAtQuery,
+		&UpdateLastSyncTokensUpdatedAtQuery,
 		updatedAt.Unix()-1, // Subtract 1 second to avoid ignoring updates within the same second
-	)
-	if err != nil {
+	); err != nil {
 		if d.logger != nil {
 			d.logger.Error(
 				"Failed to update last sync tokens updated at",
@@ -205,16 +141,18 @@ func (d *DefaultService) GetLastSyncTokensUpdatedAt(ctx context.Context) (
 		return time.Time{}, godatabases.ErrNilService
 	}
 
-	// Get the database connection
-	db, err := d.DB()
+	// Get the last sync tokens updated at timestamp
+	var updatedAt sql.NullInt64
+	row, err := d.QueryRowWithCtx(ctx, &GetLastSyncTokensUpdatedAtQuery)
 	if err != nil {
+		if d.logger != nil {
+			d.logger.Error(
+				"Failed to query last sync tokens updated at",
+				slog.String("error", err.Error()),
+			)
+		}
 		return time.Time{}, err
 	}
-
-	var updatedAt sql.NullInt64
-
-	// Get the last sync tokens updated at timestamp
-	row := db.QueryRowContext(ctx, GetLastSyncTokensUpdatedAtQuery)
 	if err = row.Scan(&updatedAt); err != nil {
 		if d.logger != nil {
 			d.logger.Error(

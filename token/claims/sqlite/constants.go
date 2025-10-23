@@ -6,6 +6,13 @@ const (
 CREATE TABLE IF NOT EXISTS refresh_tokens (id TEXT PRIMARY KEY, expires_at DATETIME NOT NULL);
 `
 
+	// CreateAccessTokensTableQuery is the SQL query to create the access_tokens table
+	CreateAccessTokensTableQuery = `
+CREATE TABLE IF NOT EXISTS access_tokens (id TEXT PRIMARY KEY, parent_refresh_token_id TEXT, expires_at DATETIME NOT NULL);
+`
+)
+
+var (
 	// InsertRefreshTokenQuery is the SQL query to insert a new refresh token
 	InsertRefreshTokenQuery = `
 INSERT OR IGNORE INTO refresh_tokens (id, expires_at) VALUES (?, ?);
@@ -19,11 +26,6 @@ DELETE FROM refresh_tokens WHERE id = ?;
 	// CheckRefreshTokenQuery is the SQL query to check if a refresh token exists
 	CheckRefreshTokenQuery = `
 SELECT COUNT(1) FROM refresh_tokens WHERE id = ? AND expires_at > CURRENT_TIMESTAMP;
-`
-
-	// CreateAccessTokensTableQuery is the SQL query to create the access_tokens table
-	CreateAccessTokensTableQuery = `
-CREATE TABLE IF NOT EXISTS access_tokens (id TEXT PRIMARY KEY, parent_refresh_token_id TEXT, expires_at DATETIME NOT NULL);
 `
 
 	// InsertAccessTokenQuery is the SQL query to insert a new access token

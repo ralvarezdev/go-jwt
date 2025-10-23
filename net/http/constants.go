@@ -1,9 +1,11 @@
 package http
 
-var (
-	// AuthorizationHeaderKey is the key of the authorization header
-	AuthorizationHeaderKey = "Authorization"
+type (
+	// ContextKey is a type for context keys
+	ContextKey string
+)
 
+var (
 	// AuthorizationKey is the key of the authorization value in the context
-	AuthorizationKey = "authorization"
+	AuthorizationKey ContextKey = "authorization"
 )

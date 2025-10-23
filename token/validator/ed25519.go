@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"context"
 	"errors"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -143,6 +144,7 @@ func (d Ed25519Validator) GetClaims(rawToken string) (
 //
 // Parameters:
 //
+//   - ctx: The context
 //   - rawToken: The raw JWT token string
 //   - token: The token type
 //
@@ -151,6 +153,7 @@ func (d Ed25519Validator) GetClaims(rawToken string) (
 //   - jwt.MapClaims: The token claims if valid
 //   - error: An error if the token is invalid, if parsing fails, or if the claims are invalid
 func (d Ed25519Validator) ValidateClaims(
+	ctx context.Context,
 	rawToken string,
 	token gojwttoken.Token,
 ) (jwt.MapClaims, error) {
@@ -161,7 +164,7 @@ func (d Ed25519Validator) ValidateClaims(
 	}
 
 	// Check if the token claims are valid
-	areValid, err := d.claimsValidator.ValidateClaims(claims, token)
+	areValid, err := d.claimsValidator.ValidateClaims(ctx, claims, token)
 	if err != nil {
 		return nil, err
 	}

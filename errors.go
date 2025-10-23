@@ -1,4 +1,4 @@
-package go_jwt
+package gojwt
 
 import "errors"
 

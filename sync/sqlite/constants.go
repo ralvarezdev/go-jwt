@@ -5,7 +5,9 @@ const (
 	CreateSyncTokensTableQuery = `
 CREATE TABLE IF NOT EXISTS sync_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, updated_at DATETIME NOT NULL);
 `
+)
 
+var (
 	// UpdateLastSyncTokensUpdatedAtQuery is the SQL query to insert a new sync tokens record
 	UpdateLastSyncTokensUpdatedAtQuery = `
 INSERT INTO sync_tokens (updated_at) VALUES (?);

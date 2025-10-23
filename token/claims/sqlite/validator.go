@@ -1,25 +1,23 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log/slog"
-	"sync"
 	"time"
 
 	godatabases "github.com/ralvarezdev/go-databases"
 	godatabasessql "github.com/ralvarezdev/go-databases/sql"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gojwttokenclaims "github.com/ralvarezdev/go-jwt/token/claims"
-	gojwttokenvalidator "github.com/ralvarezdev/go-jwt/token/validator"
 )
 
 type (
 	// TokenValidator is the default implementation of the Service interface
 	TokenValidator struct {
-		godatabasessql.Handler
+		godatabasessql.Service
 		logger *slog.Logger
-		mutex  sync.Mutex
 	}
 )
 
@@ -27,7 +25,7 @@ type (
 //
 // Parameters:
 //
-//   - handler: the SQL connection handler
+//   - service: the SQL connection service
 //   - logger: the logger (optional, can be nil)
 //
 // Returns:
@@ -35,12 +33,12 @@ type (
 //   - *TokenValidator: the TokenValidator instance
 //   - error: an error if the data source or driver name is empty
 func NewTokenValidator(
-	handler godatabasessql.Handler,
+	service godatabasessql.Service,
 	logger *slog.Logger,
 ) (*TokenValidator, error) {
-	// Check if the handler is nil
-	if handler == nil {
-		return nil, godatabases.ErrNilHandler
+	// Check if the service is nil
+	if service == nil {
+		return nil, godatabases.ErrNilService
 	}
 
 	if logger != nil {
@@ -50,28 +48,28 @@ func NewTokenValidator(
 	}
 
 	return &TokenValidator{
-		Handler: handler,
+		Service: service,
 		logger:  logger,
 	}, nil
 }
 
 // Connect opens the database connection
 //
+// Parameters:
+//
+//   - ctx: the context
+//
 // Returns:
 //
 //   - *sql.DB: the database connection
 //   - error: an error if the connection could not be opened
-func (t *TokenValidator) Connect() (*sql.DB, error) {
+func (t *TokenValidator) Connect(ctx context.Context) (*sql.DB, error) {
 	if t == nil {
 		return nil, godatabases.ErrNilService
 	}
 
-	// Lock the mutex to ensure thread safety
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-
-	// Connect to the database
-	db, err := t.Handler.Connect()
+	// Get the database connection
+	db, err := t.Service.Connect()
 	if err != nil {
 		if t.logger != nil {
 			t.logger.Error(
@@ -83,66 +81,12 @@ func (t *TokenValidator) Connect() (*sql.DB, error) {
 	}
 
 	// Ensure the tables exist
-	if _, err = db.Exec(CreateRefreshTokensTableQuery); err != nil {
+	if _, err = db.ExecContext(ctx, CreateRefreshTokensTableQuery); err != nil {
 		return nil, err
 	}
-	if _, err = db.Exec(CreateAccessTokensTableQuery); err != nil {
+	if _, err = db.ExecContext(ctx, CreateAccessTokensTableQuery); err != nil {
 		return nil, err
 	}
-	return db, nil
-}
-
-// Disconnect closes the database connection
-//
-// Returns:
-//
-//   - error: an error if the connection could not be closed
-func (t *TokenValidator) Disconnect() error {
-	if t == nil {
-		return gojwttokenvalidator.ErrNilValidator
-	}
-
-	// Lock the mutex to ensure thread safety
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-
-	// Disconnect from the database
-	if err := t.Handler.Disconnect(); err != nil {
-		if t.logger != nil {
-			t.logger.Error(
-				"Failed to disconnect from database",
-				slog.String("error", err.Error()),
-			)
-		}
-		return err
-	}
-
-	return nil
-}
-
-// DB is a helper function to get the database connection
-//
-// Returns:
-//
-//   - *sql.DB: the database connection
-func (t *TokenValidator) DB() (*sql.DB, error) {
-	// Lock the mutex to ensure thread safety
-	t.mutex.Lock()
-
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		t.mutex.Unlock()
-		if t.logger != nil {
-			t.logger.Error(
-				"Failed to get database connection",
-				slog.String("error", err.Error()),
-			)
-		}
-		return nil, err
-	}
-	t.mutex.Unlock()
-
 	return db, nil
 }
 
@@ -150,6 +94,7 @@ func (t *TokenValidator) DB() (*sql.DB, error) {
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - id: the refresh token JTI to insert
 //   - expiresAt: the expiration time of the refresh token
 //
@@ -157,6 +102,7 @@ func (t *TokenValidator) DB() (*sql.DB, error) {
 //
 //   - error: an error if the insertion could not be performed
 func (t *TokenValidator) AddRefreshToken(
+	ctx context.Context,
 	id string,
 	expiresAt time.Time,
 ) error {
@@ -165,15 +111,10 @@ func (t *TokenValidator) AddRefreshToken(
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		return err
-	}
-
 	// Insert the refresh token JTI
-	if _, err = db.Exec(
-		InsertRefreshTokenQuery,
+	if _, err := t.ExecWithCtx(
+		ctx,
+		&InsertRefreshTokenQuery,
 		id,
 		expiresAt.Unix(),
 	); err != nil && t.logger != nil {
@@ -190,6 +131,7 @@ func (t *TokenValidator) AddRefreshToken(
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - id: the access token JTI to insert
 //   - parentRefreshTokenID: the parent refresh token JTI
 //   - expiresAt: the expiration time of the access token
@@ -198,6 +140,7 @@ func (t *TokenValidator) AddRefreshToken(
 //
 //   - error: an error if the insertion could not be performed
 func (t *TokenValidator) AddAccessToken(
+	ctx context.Context,
 	id, parentRefreshTokenID string,
 	expiresAt time.Time,
 ) error {
@@ -206,15 +149,10 @@ func (t *TokenValidator) AddAccessToken(
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		return err
-	}
-
 	// Insert the access token JTI
-	if _, err = db.Exec(
-		InsertAccessTokenQuery,
+	if _, err := t.ExecWithCtx(
+		ctx,
+		&InsertAccessTokenQuery,
 		id,
 		parentRefreshTokenID,
 		expiresAt.Unix(),
@@ -232,26 +170,22 @@ func (t *TokenValidator) AddAccessToken(
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - id: the refresh token JTI whose associated access tokens are to be revoked
 //
 // Returns:
 //
 //   - error: an error if the revocation could not be performed
-func (t *TokenValidator) RevokeAccessTokenByRefreshToken(id string) error {
+func (t *TokenValidator) RevokeAccessTokenByRefreshToken(ctx context.Context, id string) error {
 	// Check if the service is nil
 	if t == nil {
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		return err
-	}
-
 	// Revoke the access tokens associated with the refresh token JTI
-	if _, err = db.Exec(
-		DeleteAccessTokenByRefreshTokenQuery,
+	if _, err := t.ExecWithCtx(
+		ctx,
+		&DeleteAccessTokenByRefreshTokenQuery,
 		id,
 	); err != nil && t.logger != nil {
 		t.logger.Error(
@@ -267,26 +201,22 @@ func (t *TokenValidator) RevokeAccessTokenByRefreshToken(id string) error {
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - id: the refresh token JTI to revoke
 //
 // Returns:
 //
 //   - error: an error if the revocation could not be performed
-func (t *TokenValidator) RevokeRefreshToken(id string) error {
+func (t *TokenValidator) RevokeRefreshToken(ctx context.Context, id string) error {
 	// Check if the service is nil
 	if t == nil {
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		return err
-	}
-
 	// Revoke the refresh token JTI
-	if _, err = db.Exec(
-		DeleteRefreshTokenQuery,
+	if _, err := t.ExecWithCtx(
+		ctx,
+		&DeleteRefreshTokenQuery,
 		id,
 	); err != nil && t.logger != nil {
 		t.logger.Error(
@@ -297,36 +227,29 @@ func (t *TokenValidator) RevokeRefreshToken(id string) error {
 	}
 
 	// Revoke associated access tokens first
-	if err = t.RevokeAccessTokenByRefreshToken(id); err != nil {
-		return err
-	}
-	return nil
+	return t.RevokeAccessTokenByRefreshToken(ctx, id)
 }
 
 // RevokeAccessToken revokes an access token JTI from the database
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - id: the access token JTI to revoke
 //
 // Returns:
 //
 //   - error: an error if the revocation could not be performed
-func (t *TokenValidator) RevokeAccessToken(id string) error {
+func (t *TokenValidator) RevokeAccessToken(ctx context.Context, id string) error {
 	// Check if the service is nil
 	if t == nil {
 		return gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		return err
-	}
-
 	// Revoke the access token JTI
-	if _, err = db.Exec(
-		DeleteAccessTokenQuery,
+	if _, err := t.ExecWithCtx(
+		ctx,
+		&DeleteAccessTokenQuery,
 		id,
 	); err != nil && t.logger != nil {
 		t.logger.Error(
@@ -342,6 +265,7 @@ func (t *TokenValidator) RevokeAccessToken(id string) error {
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - token: the token type (access or refresh)
 //   - id: the token JTI to revoke
 //
@@ -349,6 +273,7 @@ func (t *TokenValidator) RevokeAccessToken(id string) error {
 //
 //   - error: an error if the revocation could not be performed
 func (t *TokenValidator) RevokeToken(
+	ctx context.Context,
 	token gojwttoken.Token,
 	id string,
 ) error {
@@ -359,9 +284,9 @@ func (t *TokenValidator) RevokeToken(
 	// Revoke the JTI based on the token type
 	switch token {
 	case gojwttoken.AccessToken:
-		return t.RevokeAccessToken(id)
+		return t.RevokeAccessToken(ctx, id)
 	case gojwttoken.RefreshToken:
-		return t.RevokeRefreshToken(id)
+		return t.RevokeRefreshToken(ctx, id)
 	default:
 		if t.logger != nil {
 			t.logger.Error(
@@ -383,82 +308,42 @@ func (t *TokenValidator) RevokeToken(
 //
 //   - bool: true if the refresh token JTI exists, false otherwise
 //   - error: an error if the validation could not be performed
-func (t *TokenValidator) IsRefreshTokenValid(id string) (bool, error) {
+func (t *TokenValidator) IsRefreshTokenValid(ctx context.Context, id string) (bool, error) {
 	// Check if the service is nil
 	if t == nil {
 		return false, gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		return false, err
-	}
-
 	// Check if the refresh token JTI exists
-	var exists bool
-	err = db.QueryRow(
-		CheckRefreshTokenQuery,
-		id,
-	).Scan(&exists)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		if t.logger != nil {
-			t.logger.Error(
-				"Failed to validate refresh token JTI",
-				slog.String("id", id),
-				slog.String("error", err.Error()),
-			)
-		}
-		return false, err
-	}
-	return exists, nil
+	return t.IsTokenValid(ctx, gojwttoken.RefreshToken, id)
 }
 
 // IsAccessTokenValid checks if the given access token JTI exists in the database
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - id: the access token JTI to validate
 //
 // Returns:
 //
 //   - bool: true if the access token JTI exists, false otherwise
 //   - error: an error if the validation could not be performed
-func (t *TokenValidator) IsAccessTokenValid(id string) (bool, error) {
+func (t *TokenValidator) IsAccessTokenValid(ctx context.Context, id string) (bool, error) {
 	// Check if the service is nil
 	if t == nil {
 		return false, gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Get the database connection
-	db, err := t.DB()
-	if err != nil {
-		return false, err
-	}
-
 	// Check if the access token JTI exists
-	var exists bool
-	err = db.QueryRow(
-		CheckAccessTokenQuery,
-		id,
-	).Scan(&exists)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		if t.logger != nil {
-			t.logger.Error(
-				"Failed to validate access token JTI",
-				slog.String("id", id),
-				slog.String("error", err.Error()),
-			)
-		}
-		return false, err
-	}
-	return exists, nil
+	return t.IsTokenValid(ctx, gojwttoken.AccessToken, id)
 }
 
 // IsTokenValid validates the token
 //
 // Parameters:
 //
+//   - ctx: the context for the query
 //   - token: the token type
 //   - id: the ID associated with the token
 //
@@ -466,20 +351,22 @@ func (t *TokenValidator) IsAccessTokenValid(id string) (bool, error) {
 //
 //   - bool: true if the claims are valid, false otherwise
 //   - error: an error if the validation could not be performed
-func (t *TokenValidator) IsTokenValid(token gojwttoken.Token, id string) (
+func (t *TokenValidator) IsTokenValid(ctx context.Context, token gojwttoken.Token, id string) (
 	bool,
 	error,
 ) {
+	// Check if the service is nil
 	if t == nil {
 		return false, gojwttokenclaims.ErrNilTokenValidator
 	}
 
-	// Validate the JTI based on the token type
+	// Determine the query based on the token type
+	var query string
 	switch token {
 	case gojwttoken.AccessToken:
-		return t.IsAccessTokenValid(id)
+		query = CheckAccessTokenQuery
 	case gojwttoken.RefreshToken:
-		return t.IsRefreshTokenValid(id)
+		query = CheckRefreshTokenQuery
 	default:
 		if t.logger != nil {
 			t.logger.Error(
@@ -489,4 +376,46 @@ func (t *TokenValidator) IsTokenValid(token gojwttoken.Token, id string) (
 		}
 		return false, nil
 	}
+
+	// Check if the refresh token JTI exists
+	var exists bool
+	rows, err := t.QueryRowWithCtx(
+		ctx,
+		&query,
+		id,
+	)
+	if err != nil {
+		if t.logger != nil && token == gojwttoken.AccessToken {
+			t.logger.Error(
+				"Failed to validate access token JTI",
+				slog.String("id", id),
+				slog.String("error", err.Error()),
+			)
+		}
+		if t.logger != nil && token == gojwttoken.RefreshToken {
+			t.logger.Error(
+				"Failed to validate refresh token JTI",
+				slog.String("id", id),
+				slog.String("error", err.Error()),
+			)
+		}
+		return false, err
+	}
+	if rowsErr := rows.Scan(&exists); rowsErr != nil && !errors.Is(rowsErr, sql.ErrNoRows) {
+		if t.logger != nil && token == gojwttoken.AccessToken {
+			t.logger.Error(
+				"Failed to validate access token JTI",
+				slog.String("id", id),
+				slog.String("error", rowsErr.Error()),
+			)
+		} else if t.logger != nil && token == gojwttoken.RefreshToken {
+			t.logger.Error(
+				"Failed to validate refresh token JTI",
+				slog.String("id", id),
+				slog.String("error", rowsErr.Error()),
+			)
+		}
+		return false, rowsErr
+	}
+	return exists, nil
 }

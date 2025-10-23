@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
@@ -100,6 +101,7 @@ func (t *TokenValidator) GetParentRefreshTokenKey(
 //
 // Parameters:
 //
+//   - ctx: The context (not used, but kept for interface consistency)
 //   - token: The token
 //   - id: The ID associated with the token
 //   - expiresAt: The expiration time of the token
@@ -108,6 +110,7 @@ func (t *TokenValidator) GetParentRefreshTokenKey(
 //
 //   - error: An error if the token validator is nil or if setting the token in the cache fails
 func (t *TokenValidator) AddRefreshToken(
+	ctx context.Context,
 	id string,
 	expiresAt time.Time,
 ) error {
@@ -133,6 +136,7 @@ func (t *TokenValidator) AddRefreshToken(
 //
 // Parameters:
 //
+//   - ctx: The context (not used, but kept for interface consistency)
 //   - id: The ID associated with the token
 //   - parentRefreshTokenID: The parent refresh token ID
 //   - expiresAt: The expiration time of the token
@@ -141,6 +145,7 @@ func (t *TokenValidator) AddRefreshToken(
 //
 //   - error: An error if the token validator is nil or if setting the token in the cache fails
 func (t *TokenValidator) AddAccessToken(
+	ctx context.Context,
 	id string,
 	parentRefreshTokenID string,
 	expiresAt time.Time,
@@ -154,6 +159,11 @@ func (t *TokenValidator) AddAccessToken(
 		gojwttoken.RefreshToken,
 		parentRefreshTokenID,
 	)
+	if err != nil {
+		return err
+	}
+
+	// Get the parent refresh token from the cache
 	value, found := t.cache.Get(refreshTokenKey)
 	if !found {
 		return ErrParentRefreshTokenNotFound
@@ -205,6 +215,7 @@ func (t *TokenValidator) AddAccessToken(
 //
 // Parameters:
 //
+//   - ctx: The context (not used, but kept for interface consistency)
 //   - token: The token
 //   - id: The ID associated with the token
 //
@@ -212,6 +223,7 @@ func (t *TokenValidator) AddAccessToken(
 //
 //   - error: An error if the token validator is nil or if revoking the token in the cache fails
 func (t *TokenValidator) RevokeToken(
+	ctx context.Context,
 	token gojwttoken.Token,
 	id string,
 ) error {
@@ -273,6 +285,7 @@ func (t *TokenValidator) RevokeToken(
 
 	// Revoke the access token in the cache
 	return t.RevokeToken(
+		ctx,
 		gojwttoken.AccessToken,
 		accessTokenID,
 	)
@@ -282,6 +295,7 @@ func (t *TokenValidator) RevokeToken(
 //
 // Parameters:
 //
+//   - ctx: The context (not used, but kept for interface consistency)
 //   - token: The token
 //   - id: The ID associated with the token
 //
@@ -290,6 +304,7 @@ func (t *TokenValidator) RevokeToken(
 //   - bool: Whether the token is valid
 //   - error: An error if the token validator is nil or if checking the token in the cache fails
 func (t *TokenValidator) IsTokenValid(
+	ctx context.Context,
 	token gojwttoken.Token,
 	id string,
 ) (bool, error) {

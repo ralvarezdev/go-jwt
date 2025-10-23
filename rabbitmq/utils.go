@@ -40,10 +40,14 @@ func DeclareTokensMessageQueue(ch *amqp091.Channel, queueName string) (
 		false,     // no-wait
 		nil,       // arguments
 	)
-	return &q, err
+	if err != nil {
+		return nil, err
+	}
+	return &q, nil
 }
 
-// CreateConsumeTokensMessageDeliveryChWithCtx sets up a consumer to receive messages from the specified queue using the provided context
+// CreateConsumeTokensMessageDeliveryChWithCtx sets up a consumer to receive messages from the specified queue using the
+// provided context
 //
 // Parameters:
 //

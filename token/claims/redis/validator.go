@@ -111,6 +111,7 @@ func (t *TokenValidator) GetParentRefreshTokenKey(
 //
 // Parameters:
 //
+//   - ctx: The context
 //   - key: The key for the token
 //   - isValid: The value to set (true if valid, false if revoked)
 //   - expiresAt: The expiration time of the token
@@ -119,6 +120,7 @@ func (t *TokenValidator) GetParentRefreshTokenKey(
 //
 //   - error: An error if setting the token fails
 func (t *TokenValidator) setWithFormattedKey(
+	ctx context.Context,
 	key string,
 	isValid bool,
 	expiresAt time.Time,
@@ -129,7 +131,7 @@ func (t *TokenValidator) setWithFormattedKey(
 
 	// Set the initial value
 	if err := t.redisClient.Set(
-		context.Background(),
+		ctx,
 		key,
 		isValid,
 		0,
@@ -139,7 +141,7 @@ func (t *TokenValidator) setWithFormattedKey(
 	}
 
 	// Set expiration time for the key as a UNIX timestamp
-	err := t.redisClient.ExpireAt(context.Background(), key, expiresAt).Err()
+	err := t.redisClient.ExpireAt(ctx, key, expiresAt).Err()
 	if err != nil {
 		gojwttokenclaims.SetTokenFailed(err, t.logger)
 	}
@@ -157,6 +159,7 @@ func (t *TokenValidator) setWithFormattedKey(
 //
 //   - error: An error if the token validator is nil or if adding the refresh token fails
 func (t *TokenValidator) AddRefreshToken(
+	ctx context.Context,
 	id string,
 	expiresAt time.Time,
 ) error {
@@ -170,13 +173,14 @@ func (t *TokenValidator) AddRefreshToken(
 		return err
 	}
 
-	return t.setWithFormattedKey(key, true, expiresAt)
+	return t.setWithFormattedKey(ctx, key, true, expiresAt)
 }
 
 // AddAccessToken adds an access token
 //
 // Parameters:
 //
+//   - ctx: The context
 //   - id: The ID associated with the token
 //   - parentRefreshTokenID: The parent refresh token ID
 //   - expiresAt: The expiration time of the token
@@ -185,6 +189,7 @@ func (t *TokenValidator) AddRefreshToken(
 //
 //   - error: An error if the token validator is nil or if adding the access token fails
 func (t *TokenValidator) AddAccessToken(
+	ctx context.Context,
 	id string,
 	parentRefreshTokenID string,
 	expiresAt time.Time,
@@ -200,29 +205,30 @@ func (t *TokenValidator) AddAccessToken(
 	}
 
 	// Set the parent refresh token ID key
-	parentRefreshTokenKey, err := t.GetParentRefreshTokenKey(id)
-	if err != nil {
-		return err
+	parentRefreshTokenKey, parentKeyErr := t.GetParentRefreshTokenKey(id)
+	if parentKeyErr != nil {
+		return parentKeyErr
 	}
 
 	// Set the parent refresh token ID with its access token ID
-	if err := t.redisClient.Set(
-		context.Background(),
+	if setErr := t.redisClient.Set(
+		ctx,
 		parentRefreshTokenKey,
 		id,
-		expiresAt.Sub(time.Now()),
-	).Err(); err != nil {
-		gojwttokenclaims.SetTokenFailed(err, t.logger)
-		return err
+		time.Until(expiresAt),
+	).Err(); setErr != nil {
+		gojwttokenclaims.SetTokenFailed(setErr, t.logger)
+		return setErr
 	}
 
-	return t.setWithFormattedKey(key, true, expiresAt)
+	return t.setWithFormattedKey(ctx, key, true, expiresAt)
 }
 
 // RevokeToken revokes the token
 //
 // Parameters:
 //
+//   - ctx: The context
 //   - token: The token
 //   - id: The ID associated with the token
 //
@@ -230,6 +236,7 @@ func (t *TokenValidator) AddAccessToken(
 //
 //   - error: An error if the token validator is nil or if revoking the token fails
 func (t *TokenValidator) RevokeToken(
+	ctx context.Context,
 	token gojwttoken.Token,
 	id string,
 ) error {
@@ -244,13 +251,14 @@ func (t *TokenValidator) RevokeToken(
 	}
 
 	// Get the current TTL of the key
-	ttl, err := t.redisClient.TTL(context.Background(), key).Result()
+	ttl, err := t.redisClient.TTL(ctx, key).Result()
 	if err != nil {
 		return err
 	}
 
 	// Update the value maintaining the TTL
 	if err = t.setWithFormattedKey(
+		ctx,
 		key,
 		false,
 		time.Now().Add(ttl),
@@ -272,7 +280,7 @@ func (t *TokenValidator) RevokeToken(
 
 	// Get the associated access token ID
 	accessTokenID, err := t.redisClient.Get(
-		context.Background(),
+		ctx,
 		parentRefreshTokenKey,
 	).Result()
 	if err != nil {
@@ -287,7 +295,7 @@ func (t *TokenValidator) RevokeToken(
 
 	// Get the current TTL of the access token key
 	accessTokenTTL, err := t.redisClient.TTL(
-		context.Background(),
+		ctx,
 		accessTokenKey,
 	).Result()
 	if err != nil {
@@ -296,6 +304,7 @@ func (t *TokenValidator) RevokeToken(
 
 	// Update the value maintaining the TTL
 	if err = t.setWithFormattedKey(
+		ctx,
 		accessTokenKey,
 		false,
 		time.Now().Add(accessTokenTTL),
@@ -310,6 +319,7 @@ func (t *TokenValidator) RevokeToken(
 //
 // Parameters:
 //
+//   - ctx: The context
 //   - token: The token
 //   - id: The ID associated with the token
 //
@@ -318,6 +328,7 @@ func (t *TokenValidator) RevokeToken(
 //   - bool: True if the token is valid, false if revoked
 //   - error: An error if the token validator is nil or if checking the token fails
 func (t *TokenValidator) IsTokenValid(
+	ctx context.Context,
 	token gojwttoken.Token,
 	id string,
 ) (bool, error) {
@@ -329,7 +340,7 @@ func (t *TokenValidator) IsTokenValid(
 
 	// Get the value
 	isValid, err := t.redisClient.Get(
-		context.Background(),
+		ctx,
 		key,
 	).Result()
 	if err != nil {

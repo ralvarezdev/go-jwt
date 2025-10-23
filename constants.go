@@ -1,4 +1,4 @@
-package go_jwt
+package gojwt
 
 const (
 	// BearerPrefix is the prefix for the bearer token

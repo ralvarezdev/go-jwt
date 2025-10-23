@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
-	"sync"
 
 	gojwtrabbitmq "github.com/ralvarezdev/go-jwt/rabbitmq"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
@@ -18,7 +17,6 @@ type (
 		gojwttokenclaims.TokenValidator
 		logger   *slog.Logger
 		consumer Consumer
-		mutex    sync.Mutex
 	}
 )
 
@@ -127,50 +125,55 @@ func (d *DefaultService) Start(ctx context.Context) error {
 					// Process the message
 					for _, issuedTokenPair := range msg.IssuedTokenPairs {
 						// Insert the refresh token ID
-						if err = d.AddRefreshToken(
+						if addErr := d.AddRefreshToken(
+							ctx,
 							issuedTokenPair.RefreshTokenID,
 							issuedTokenPair.RefreshTokenExpiresAt,
-						); err != nil {
-							return err
+						); addErr != nil {
+							return addErr
 						}
 
 						// Also insert the access token ID
-						if err = d.AddAccessToken(
+						if addErr := d.AddAccessToken(
+							ctx,
 							issuedTokenPair.AccessTokenID,
 							issuedTokenPair.RefreshTokenID,
 							issuedTokenPair.AccessTokenExpiresAt,
-						); err != nil {
-							return err
+						); addErr != nil {
+							return addErr
 						}
 					}
 
 					// Remove the revoked refresh tokens ID
 					for _, revokedTokenID := range msg.RevokedRefreshTokensID {
-						if err = d.RevokeToken(
+						if revokeErr := d.RevokeToken(
+							ctx,
 							gojwttoken.RefreshToken,
 							revokedTokenID,
-						); err != nil {
-							return err
+						); revokeErr != nil {
+							return revokeErr
 						}
 					}
 
 					// Remove the revoked refresh tokens ID
 					for _, revokedTokenID := range msg.RevokedAccessTokensID {
-						if err = d.RevokeToken(
+						if revokeErr := d.RevokeToken(
+							ctx,
 							gojwttoken.AccessToken,
 							revokedTokenID,
-						); err != nil {
-							return err
+						); revokeErr != nil {
+							return revokeErr
 						}
 					}
 
 					// Remove the revoked access tokens ID
 					for _, revokedTokenJTI := range msg.RevokedAccessTokensID {
-						if err = d.RevokeToken(
+						if revokeErr := d.RevokeToken(
+							ctx,
 							gojwttoken.AccessToken,
 							revokedTokenJTI,
-						); err != nil {
-							return err
+						); revokeErr != nil {
+							return revokeErr
 						}
 					}
 				}

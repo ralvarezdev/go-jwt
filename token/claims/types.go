@@ -1,6 +1,8 @@
 package claims
 
 import (
+	"context"
+
 	"github.com/golang-jwt/jwt/v5"
 	gojwt "github.com/ralvarezdev/go-jwt"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
@@ -40,6 +42,7 @@ func NewDefaultClaimsValidator(
 //
 // Parameters:
 //
+//   - ctx: the context
 //   - claims: the claims to validate
 //   - token: the token type (access or refresh)
 //
@@ -48,6 +51,7 @@ func NewDefaultClaimsValidator(
 //   - bool: true if the claims are valid, false otherwise
 //   - error: if there was an error validating the claims
 func (d DefaultClaimsValidator) ValidateClaims(
+	ctx context.Context,
 	claims jwt.MapClaims,
 	token gojwttoken.Token,
 ) (bool, error) {
@@ -69,7 +73,7 @@ func (d DefaultClaimsValidator) ValidateClaims(
 	}
 
 	// Check if the token is valid
-	isValid, err := d.tokenValidator.IsTokenValid(token, jtiStr)
+	isValid, err := d.tokenValidator.IsTokenValid(ctx, token, jtiStr)
 	if err != nil {
 		return false, err
 	}

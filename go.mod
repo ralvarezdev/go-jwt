@@ -6,12 +6,14 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/prometheus/common v0.67.1
 	github.com/rabbitmq/amqp091-go v1.10.0
-	github.com/ralvarezdev/go-cache v0.1.5
-	github.com/ralvarezdev/go-databases v0.7.3
+	github.com/ralvarezdev/go-cache v0.1.6
+	github.com/ralvarezdev/go-databases v0.8.0
 	github.com/ralvarezdev/go-flags v0.3.8
-	github.com/ralvarezdev/go-strings v0.1.16
+	github.com/ralvarezdev/go-strings v0.1.17
 	golang.org/x/crypto v0.43.0
+	golang.org/x/sync v0.17.0
 )
 
 require (
@@ -43,7 +45,6 @@ require (
 	golang.org/x/arch v0.22.0 // indirect
 	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
