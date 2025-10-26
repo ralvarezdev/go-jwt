@@ -79,7 +79,7 @@ func (d Ed25519Validator) GetToken(rawToken string) (*jwt.Token, error) {
 	// Parse JWT and verify signature
 	token, err := jwt.Parse(
 		rawToken,
-		func(rawToken *jwt.Token) (interface{}, error) {
+		func(rawToken *jwt.Token) (any, error) {
 			// Check to see if the token uses the expected signing method
 			if _, ok := rawToken.Method.(*jwt.SigningMethodEd25519); !ok {
 				return nil, ErrUnexpectedSigningMethod

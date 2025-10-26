@@ -6,7 +6,6 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/prometheus/common v0.67.1
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/ralvarezdev/go-cache v0.1.6
 	github.com/ralvarezdev/go-databases v0.8.0

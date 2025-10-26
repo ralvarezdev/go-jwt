@@ -61,11 +61,10 @@ func NewTokenValidator(
 //
 // Returns:
 //
-//   - *sql.DB: the database connection
 //   - error: an error if the connection could not be opened
-func (t *TokenValidator) Connect(ctx context.Context) (*sql.DB, error) {
+func (t *TokenValidator) Connect(ctx context.Context) error {
 	if t == nil {
-		return nil, godatabases.ErrNilService
+		return godatabases.ErrNilService
 	}
 
 	// Get the database connection
@@ -77,17 +76,17 @@ func (t *TokenValidator) Connect(ctx context.Context) (*sql.DB, error) {
 				slog.String("error", err.Error()),
 			)
 		}
-		return nil, err
+		return err
 	}
 
 	// Ensure the tables exist
 	if _, err = db.ExecContext(ctx, CreateRefreshTokensTableQuery); err != nil {
-		return nil, err
+		return err
 	}
 	if _, err = db.ExecContext(ctx, CreateAccessTokensTableQuery); err != nil {
-		return nil, err
+		return err
 	}
-	return db, nil
+	return nil
 }
 
 // AddRefreshToken inserts a refresh token JTI into the database
