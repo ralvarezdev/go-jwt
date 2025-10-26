@@ -142,7 +142,7 @@ func (d *Service) GetLastSyncTokensUpdatedAt(ctx context.Context) (
 	}
 
 	// Get the last sync tokens updated at timestamp
-	var updatedAt sql.NullInt64
+	var updatedAt sql.NullTime
 	row, err := d.QueryRowWithCtx(ctx, &GetLastSyncTokensUpdatedAtQuery)
 	if err != nil {
 		if d.logger != nil {
@@ -153,20 +153,19 @@ func (d *Service) GetLastSyncTokensUpdatedAt(ctx context.Context) (
 		}
 		return time.Time{}, err
 	}
-	if err = row.Scan(&updatedAt); err != nil {
+	if rowErr := row.Scan(&updatedAt); rowErr != nil {
 		if d.logger != nil {
 			d.logger.Error(
 				"Failed to get last sync tokens updated at",
-				slog.String("error", err.Error()),
+				slog.String("error", rowErr.Error()),
 			)
 		}
-		return time.Time{}, err
+		return time.Time{}, rowErr
 	}
 
-	// If the timestamp is null, it means it has never been set, so return the zero value
+	// Return zero time if updatedAt is null
 	if !updatedAt.Valid {
 		return time.Time{}, nil
 	}
-
-	return time.Unix(updatedAt.Int64, 0), nil
+	return updatedAt.Time, nil
 }
