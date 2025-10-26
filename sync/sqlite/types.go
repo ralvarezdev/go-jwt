@@ -11,14 +11,14 @@ import (
 )
 
 type (
-	// DefaultService is the default implementation of the Service interface
-	DefaultService struct {
+	// Service is the default implementation of the Service interface
+	Service struct {
 		godatabasessql.Service
 		logger *slog.Logger
 	}
 )
 
-// NewDefaultService creates a new DefaultService
+// NewService creates a new Service
 //
 // Parameters:
 //
@@ -27,12 +27,12 @@ type (
 //
 // Returns:
 //
-//   - *DefaultService: the DefaultService instance
+//   - *Service: the Service instance
 //   - error: an error if the data source or driver name is empty
-func NewDefaultService(
+func NewService(
 	service godatabasessql.Service,
 	logger *slog.Logger,
-) (*DefaultService, error) {
+) (*Service, error) {
 	// Check if the service is nil
 	if service == nil {
 		return nil, godatabases.ErrNilService
@@ -44,7 +44,7 @@ func NewDefaultService(
 		)
 	}
 
-	return &DefaultService{
+	return &Service{
 		Service: service,
 		logger:  logger,
 	}, nil
@@ -59,7 +59,7 @@ func NewDefaultService(
 // Returns:
 //
 //   - error: an error if the connection could not be opened
-func (d *DefaultService) Connect(ctx context.Context) error {
+func (d *Service) Connect(ctx context.Context) error {
 	// Check if the service is nil
 	if d == nil {
 		return godatabases.ErrNilService
@@ -95,7 +95,7 @@ func (d *DefaultService) Connect(ctx context.Context) error {
 // Returns:
 //
 //   - error: an error if the timestamp could not be updated
-func (d *DefaultService) UpdateLastSyncTokensUpdateAt(
+func (d *Service) UpdateLastSyncTokensUpdateAt(
 	ctx context.Context,
 	updatedAt time.Time,
 ) error {
@@ -132,7 +132,7 @@ func (d *DefaultService) UpdateLastSyncTokensUpdateAt(
 //
 //   - time.Time: the last sync tokens updated at timestamp
 //   - error: an error if the timestamp could not be retrieved
-func (d *DefaultService) GetLastSyncTokensUpdatedAt(ctx context.Context) (
+func (d *Service) GetLastSyncTokensUpdatedAt(ctx context.Context) (
 	time.Time,
 	error,
 ) {
