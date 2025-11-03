@@ -6,17 +6,11 @@ const (
 )
 
 var (
-	// CtxRefreshTokenClaimsKey is the key for the refresh token context claims
-	CtxRefreshTokenClaimsKey = "refresh_token_claims"
+	// CtxTokenClaimsKey is the key for the token claims to be set to the context
+	CtxTokenClaimsKey = "token_claims"
 
-	// CtxAccessTokenClaimsKey is the key for the access token context claims
-	CtxAccessTokenClaimsKey = "access_token_claims"
-
-	// CtxRefreshTokenKey is the key for the refresh token context token
-	CtxRefreshTokenKey = "refresh_token"
-
-	// CtxAccessTokenKey is the key for the access token context token
-	CtxAccessTokenKey = "access_token"
+	// CtxTokenKey is the key for the token to be set to the context
+	CtxTokenKey = "token"
 
 	// IDClaim is the claim for the JWT ID
 	IDClaim = "jti"

@@ -1,45 +1,34 @@
 package context
 
 import (
-	"context"
-	"net/http"
-
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	gojwt "github.com/ralvarezdev/go-jwt"
-	gojwtnethttp "github.com/ralvarezdev/go-jwt/net/http"
 )
 
 // SetCtxTokenClaims sets the token claims in the context
 //
 // Parameters:
 //
-//   - r: The HTTP request
+//   - ctx: The gin context
 //   - claims: The token claims to set in the context
-//
-// Returns:
-//
-//   - *http.Request: The HTTP request with the token claims set in the context
-func SetCtxTokenClaims(
-	r *http.Request,
-	claims jwt.MapClaims,
-) *http.Request {
-	ctx := context.WithValue(r.Context(), gojwtnethttp.AuthorizationKey, claims)
-	return r.WithContext(ctx)
+func SetCtxTokenClaims(ctx *gin.Context, claims jwt.MapClaims) {
+	ctx.Set(gojwt.CtxTokenClaimsKey, claims)
 }
 
 // GetCtxTokenClaims tries to get the token claims from the context
 //
 // Parameters:
 //
-//   - r: The HTTP request
+//   - ctx: The gin context
 //
 // Returns:
 //
 //   - jwt.MapClaims: The token claims from the context
 //   - error: An error if the token claims are not found or of an unexpected type
-func GetCtxTokenClaims(r *http.Request) (jwt.MapClaims, error) {
+func GetCtxTokenClaims(ctx *gin.Context) (jwt.MapClaims, error) {
 	// Get the token claims from the context
-	value := r.Context().Value(gojwtnethttp.AuthorizationKey)
+	value := ctx.Value(gojwt.CtxTokenClaimsKey)
 	if value == nil {
 		return nil, gojwt.ErrMissingTokenClaimsInContext
 	}
@@ -57,36 +46,25 @@ func GetCtxTokenClaims(r *http.Request) (jwt.MapClaims, error) {
 //
 // Parameters:
 //
-//   - r: The HTTP request
+//   - ctx: The gin context
 //   - token: The raw token to set in the context
-//
-// Returns:
-//
-//   - *http.Request: The HTTP request with the raw token set in the context
-//   - error: An error if the token is empty
-func SetCtxToken(r *http.Request, token string) (*http.Request, error) {
-	// Check if the token is empty
-	if token == "" {
-		return nil, gojwt.ErrEmptyToken
-	}
-
-	ctx := context.WithValue(r.Context(), gojwtnethttp.AuthorizationKey, token)
-	return r.WithContext(ctx), nil
+func SetCtxToken(ctx *gin.Context, token string) {
+	ctx.Set(gojwt.CtxTokenKey, token)
 }
 
 // GetCtxToken tries to get the raw token from the context
 //
 // Parameters:
 //
-//   - r: The HTTP request
+//   - ctx: The gin context
 //
 // Returns:
 //
 //   - string: The raw token from the context
 //   - error: An error if the token is not found or of an unexpected type
-func GetCtxToken(r *http.Request) (string, error) {
+func GetCtxToken(ctx *gin.Context) (string, error) {
 	// Get the token from the context
-	value := r.Context().Value(gojwtnethttp.AuthorizationKey)
+	value := ctx.Value(gojwt.CtxTokenKey)
 	if value == nil {
 		return "", gojwt.ErrMissingTokenInContext
 	}

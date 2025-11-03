@@ -1,11 +1,10 @@
-package context
+package grpc
 
 import (
 	"context"
 
 	"github.com/golang-jwt/jwt/v5"
 	gojwt "github.com/ralvarezdev/go-jwt"
-	gojwtgrpc "github.com/ralvarezdev/go-jwt/grpc"
 )
 
 // SetCtxToken sets the raw token to the context
@@ -19,7 +18,7 @@ import (
 //
 //   - context.Context: The context with the raw token set
 func SetCtxToken(ctx context.Context, token string) context.Context {
-	return context.WithValue(ctx, gojwtgrpc.AuthorizationKey, token)
+	return context.WithValue(ctx, gojwt.CtxTokenKey, token)
 }
 
 // SetCtxTokenClaims sets the token claims to the context
@@ -36,7 +35,7 @@ func SetCtxTokenClaims(
 	ctx context.Context,
 	claims jwt.MapClaims,
 ) context.Context {
-	return context.WithValue(ctx, gojwtgrpc.AuthorizationKey, claims)
+	return context.WithValue(ctx, gojwt.CtxTokenClaimsKey, claims)
 }
 
 // GetCtxToken gets the raw token from the context
@@ -51,7 +50,7 @@ func SetCtxTokenClaims(
 //   - error: An error if the raw token is not found or is of an unexpected type
 func GetCtxToken(ctx context.Context) (string, error) {
 	// Get the raw token from the context
-	value := ctx.Value(gojwtgrpc.AuthorizationKey)
+	value := ctx.Value(gojwt.CtxTokenKey)
 	if value == nil {
 		return "", ErrMissingToken
 	}
@@ -77,7 +76,7 @@ func GetCtxToken(ctx context.Context) (string, error) {
 //   - error: An error if the token claims are not found or are of an unexpected type
 func GetCtxTokenClaims(ctx context.Context) (jwt.MapClaims, error) {
 	// Get the claims from the context
-	value := ctx.Value(gojwtgrpc.AuthorizationKey)
+	value := ctx.Value(gojwt.CtxTokenClaimsKey)
 	if value == nil {
 		return nil, ErrMissingTokenClaims
 	}
