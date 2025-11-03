@@ -52,13 +52,13 @@ func GetCtxToken(ctx context.Context) (string, error) {
 	// Get the raw token from the context
 	value := ctx.Value(gojwt.CtxTokenKey)
 	if value == nil {
-		return "", ErrMissingToken
+		return "", gojwt.ErrMissingTokenInContext
 	}
 
 	// Check the type of the value
 	rawToken, ok := value.(string)
 	if !ok {
-		return "", ErrUnexpectedTokenType
+		return "", gojwt.ErrUnexpectedTokenTypeInContext
 	}
 
 	return rawToken, nil
@@ -78,13 +78,13 @@ func GetCtxTokenClaims(ctx context.Context) (jwt.MapClaims, error) {
 	// Get the claims from the context
 	value := ctx.Value(gojwt.CtxTokenClaimsKey)
 	if value == nil {
-		return nil, ErrMissingTokenClaims
+		return nil, gojwt.ErrMissingTokenClaimsInContext
 	}
 
 	// Check the type of the value
 	claims, ok := value.(jwt.MapClaims)
 	if !ok {
-		return nil, ErrUnexpectedTokenClaimsType
+		return nil, gojwt.ErrUnexpectedTokenClaimsTypeInContext
 	}
 	return claims, nil
 }
@@ -109,7 +109,7 @@ func GetCtxTokenClaimsSubject(ctx context.Context) (string, error) {
 	// Get the subject from the claims
 	subject, ok := claims[gojwt.SubjectClaim].(string)
 	if !ok {
-		return "", ErrMissingTokenClaimsSubject
+		return "", gojwt.ErrMissingTokenClaimsSubject
 	}
 	return subject, nil
 }
@@ -134,7 +134,7 @@ func GetCtxTokenClaimsJwtID(ctx context.Context) (string, error) {
 	// Get the JWT ID from the claims
 	jwtID, ok := claims[gojwt.IDClaim].(string)
 	if !ok {
-		return "", ErrMissingTokenClaimsID
+		return "", gojwt.ErrMissingTokenClaimsID
 	}
 	return jwtID, nil
 }
