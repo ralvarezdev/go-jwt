@@ -4,13 +4,13 @@ go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/ralvarezdev/go-cache v0.1.6
 	github.com/ralvarezdev/go-databases v0.8.0
 	github.com/ralvarezdev/go-flags v0.3.8
 	github.com/ralvarezdev/go-strings v0.1.17
+	github.com/redis/go-redis/v9 v9.16.0
 	golang.org/x/crypto v0.43.0
 	golang.org/x/sync v0.17.0
 )

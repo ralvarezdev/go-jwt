@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	godatabases "github.com/ralvarezdev/go-databases"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gojwttokenclaims "github.com/ralvarezdev/go-jwt/token/claims"
