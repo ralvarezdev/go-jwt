@@ -77,9 +77,9 @@ func (t *TokenValidator) GetKey(
 	}
 
 	return gostringsadd.Prefixes(
-		tokenPrefix,
-		KeySeparator,
 		id,
+		KeySeparator,
+		tokenPrefix,
 	), nil
 }
 
@@ -87,7 +87,7 @@ func (t *TokenValidator) GetKey(
 //
 // Parameters:
 //
-//   - id: The ID associated with the token
+//   - id: The ID associated with the refresh token
 //
 // Returns:
 //
@@ -101,13 +101,13 @@ func (t *TokenValidator) GetParentRefreshTokenKey(
 	}
 
 	return gostringsadd.Prefixes(
-		ParentRefreshTokenIDPrefix,
-		KeySeparator,
 		id,
+		KeySeparator,
+		ParentRefreshTokenIDPrefix,
 	), nil
 }
 
-// setWithFormattedKey sets the token with the value and expiration
+// setKey sets the token with the value and expiration
 //
 // Parameters:
 //
@@ -119,7 +119,7 @@ func (t *TokenValidator) GetParentRefreshTokenKey(
 // Returns:
 //
 //   - error: An error if setting the token fails
-func (t *TokenValidator) setWithFormattedKey(
+func (t *TokenValidator) setKey(
 	ctx context.Context,
 	key string,
 	isValid bool,
@@ -173,7 +173,7 @@ func (t *TokenValidator) AddRefreshToken(
 		return err
 	}
 
-	return t.setWithFormattedKey(ctx, key, true, expiresAt)
+	return t.setKey(ctx, key, true, expiresAt)
 }
 
 // AddAccessToken adds an access token
@@ -205,7 +205,7 @@ func (t *TokenValidator) AddAccessToken(
 	}
 
 	// Set the parent refresh token ID key
-	parentRefreshTokenKey, parentKeyErr := t.GetParentRefreshTokenKey(id)
+	parentRefreshTokenKey, parentKeyErr := t.GetParentRefreshTokenKey(parentRefreshTokenID)
 	if parentKeyErr != nil {
 		return parentKeyErr
 	}
@@ -221,7 +221,7 @@ func (t *TokenValidator) AddAccessToken(
 		return setErr
 	}
 
-	return t.setWithFormattedKey(ctx, key, true, expiresAt)
+	return t.setKey(ctx, key, true, expiresAt)
 }
 
 // RevokeToken revokes the token
@@ -257,7 +257,7 @@ func (t *TokenValidator) RevokeToken(
 	}
 
 	// Update the value maintaining the TTL
-	if err = t.setWithFormattedKey(
+	if err = t.setKey(
 		ctx,
 		key,
 		false,
@@ -268,7 +268,7 @@ func (t *TokenValidator) RevokeToken(
 	}
 
 	// Check if the token is a refresh token to revoke its associated access token
-	if token != gojwttoken.RefreshToken {
+	if token == gojwttoken.AccessToken {
 		return nil
 	}
 
@@ -303,7 +303,7 @@ func (t *TokenValidator) RevokeToken(
 	}
 
 	// Update the value maintaining the TTL
-	if err = t.setWithFormattedKey(
+	if err = t.setKey(
 		ctx,
 		accessTokenKey,
 		false,
