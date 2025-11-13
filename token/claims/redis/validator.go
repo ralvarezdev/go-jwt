@@ -332,6 +332,10 @@ func (t *TokenValidator) IsTokenValid(
 	token gojwttoken.Token,
 	id string,
 ) (bool, error) {
+	if t == nil {
+		return false, gojwttokenclaims.ErrNilTokenValidator
+	}
+	
 	// Get the key
 	key, err := t.GetKey(token, id)
 	if err != nil {
