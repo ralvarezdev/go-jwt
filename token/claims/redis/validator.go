@@ -2,15 +2,16 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strconv"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	godatabases "github.com/ralvarezdev/go-databases"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gojwttokenclaims "github.com/ralvarezdev/go-jwt/token/claims"
 	gostringsadd "github.com/ralvarezdev/go-strings/add"
+	"github.com/redis/go-redis/v9"
 )
 
 type (
@@ -335,7 +336,7 @@ func (t *TokenValidator) IsTokenValid(
 	if t == nil {
 		return false, gojwttokenclaims.ErrNilTokenValidator
 	}
-	
+
 	// Get the key
 	key, err := t.GetKey(token, id)
 	if err != nil {
@@ -348,6 +349,10 @@ func (t *TokenValidator) IsTokenValid(
 		key,
 	).Result()
 	if err != nil {
+		// Check if the error is a redis.Nil error (key does not exist)
+		if errors.Is(err, redis.Nil) {
+			return false, nil
+		}
 		gojwttokenclaims.GetTokenFailed(err, t.logger)
 		return false, err
 	}
