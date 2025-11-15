@@ -10,7 +10,6 @@ import (
 	godatabases "github.com/ralvarezdev/go-databases"
 	gojwttoken "github.com/ralvarezdev/go-jwt/token"
 	gojwttokenclaims "github.com/ralvarezdev/go-jwt/token/claims"
-	gostringsadd "github.com/ralvarezdev/go-strings/add"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -50,62 +49,6 @@ func NewTokenValidator(
 	}
 
 	return &TokenValidator{redisClient, logger}, nil
-}
-
-// GetKey gets the JWT Identifier key
-//
-// Parameters:
-//
-//   - token: The token
-//   - id: The ID associated with the token
-//
-// Returns:
-//
-//   - string: The key for the token
-//   - error: An error if the token abbreviation fails
-func (t *TokenValidator) GetKey(
-	token gojwttoken.Token,
-	id string,
-) (string, error) {
-	if t == nil {
-		return "", gojwttokenclaims.ErrNilTokenValidator
-	}
-
-	// Get the token string
-	tokenPrefix, err := token.Abbreviation()
-	if err != nil {
-		return "", err
-	}
-
-	return gostringsadd.Prefixes(
-		id,
-		KeySeparator,
-		tokenPrefix,
-	), nil
-}
-
-// GetParentRefreshTokenKey gets the parent refresh token key
-//
-// Parameters:
-//
-//   - id: The ID associated with the refresh token
-//
-// Returns:
-//
-//   - string: The key for the parent refresh token
-//   - error: An error if the token validator is nil
-func (t *TokenValidator) GetParentRefreshTokenKey(
-	id string,
-) (string, error) {
-	if t == nil {
-		return "", gojwttokenclaims.ErrNilTokenValidator
-	}
-
-	return gostringsadd.Prefixes(
-		id,
-		KeySeparator,
-		ParentRefreshTokenIDPrefix,
-	), nil
 }
 
 // setKey sets the token with the value and expiration
@@ -169,7 +112,7 @@ func (t *TokenValidator) AddRefreshToken(
 	}
 
 	// Get the key
-	key, err := t.GetKey(gojwttoken.RefreshToken, id)
+	key, err := GetKey(gojwttoken.RefreshToken, id)
 	if err != nil {
 		return err
 	}
@@ -200,17 +143,14 @@ func (t *TokenValidator) AddAccessToken(
 	}
 
 	// Get the key
-	key, err := t.GetKey(gojwttoken.AccessToken, id)
+	key, err := GetKey(gojwttoken.AccessToken, id)
 	if err != nil {
 		return err
 	}
 
 	// Set the parent refresh token ID key
-	parentRefreshTokenKey, parentKeyErr := t.GetParentRefreshTokenKey(parentRefreshTokenID)
-	if parentKeyErr != nil {
-		return parentKeyErr
-	}
-
+	parentRefreshTokenKey := GetParentRefreshTokenKey(parentRefreshTokenID)
+	
 	// Set the parent refresh token ID with its access token ID
 	if setErr := t.redisClient.Set(
 		ctx,
@@ -246,7 +186,7 @@ func (t *TokenValidator) RevokeToken(
 	}
 
 	// Get the key
-	key, err := t.GetKey(token, id)
+	key, err := GetKey(token, id)
 	if err != nil {
 		return err
 	}
@@ -274,10 +214,7 @@ func (t *TokenValidator) RevokeToken(
 	}
 
 	// Get the parent refresh token key
-	parentRefreshTokenKey, err := t.GetParentRefreshTokenKey(id)
-	if err != nil {
-		return err
-	}
+	parentRefreshTokenKey := GetParentRefreshTokenKey(id)
 
 	// Get the associated access token ID
 	accessTokenID, err := t.redisClient.Get(
@@ -289,7 +226,7 @@ func (t *TokenValidator) RevokeToken(
 	}
 
 	// Revoke the associated access token
-	accessTokenKey, err := t.GetKey(gojwttoken.AccessToken, accessTokenID)
+	accessTokenKey, err := GetKey(gojwttoken.AccessToken, accessTokenID)
 	if err != nil {
 		return err
 	}
@@ -338,7 +275,7 @@ func (t *TokenValidator) IsTokenValid(
 	}
 
 	// Get the key
-	key, err := t.GetKey(token, id)
+	key, err := GetKey(token, id)
 	if err != nil {
 		return false, err
 	}
