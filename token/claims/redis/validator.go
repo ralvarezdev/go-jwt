@@ -222,6 +222,7 @@ func (t *TokenValidator) RevokeToken(
 		parentRefreshTokenKey,
 	).Result()
 	if err != nil {
+		gojwttokenclaims.GetTokenFailed(err, t.logger)
 		return err
 	}
 
