@@ -11,7 +11,7 @@ require (
 	github.com/ralvarezdev/go-flags v0.3.8
 	github.com/ralvarezdev/go-strings v0.2.3
 	github.com/redis/go-redis/v9 v9.16.0
-	golang.org/x/crypto v0.44.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/sync v0.18.0
 )
 
